@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// Host / User Model (The person organizing events)
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String   // Hashed password
+  role      String   @default("HOST") // HOST, PHOTOGRAPHER, ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]  // One host can create many events
+}
+
+// Event Model (The core hub for invitations and galleries)
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime
+  venue       String   // Venue location in Lagos
+  eventCode   String   @unique // Short readable code for guests to join manually
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  hostId      String
+  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  
+  guests      Guest[]  // An event can have many invited guests
+  media       Media[]  // An event has a shared collaborative timeline
+}
+
+// Guest Model (Manages RSVPs and individual QR Gate Passes)
+model Guest {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String?
+  email       String?
+  rsvpStatus  String   @default("PENDING") // PENDING, CONFIRMED, DECLINED
+  
+  // This unique token is encoded into the QR code sent to the guest.
+  // When scanned at the gate, the backend checks this exact token.
+  qrToken     String   @unique @default(uuid())
+  checkedIn   Boolean  @default(false)
+  checkInTime DateTime?
+
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([eventId, email]) // Prevents inviting the same email twice to the same event
+  @@unique([eventId, phone]) // Prevents inviting the same phone number twice to the same event
+}
+
+// Media Model (The Collaborative Post-Event Timeline)
+model Media {
+  id          String   @id @default(uuid())
+  url         String   // Cloudinary secure URL for the photo/video
+  mediaType   String   // IMAGE or VIDEO
+  uploadedBy  String   // "GUEST" or User ID if uploaded by the Photographer/Host
+  voiceNoteUrl String? // Optional audio wish attached to this media moment
+  createdAt   DateTime @default(now()) // Used to automatically sort the timeline chronologically
+
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
