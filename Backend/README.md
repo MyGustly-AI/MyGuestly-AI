@@ -21,6 +21,7 @@ Welcome to the **MyGuestly AI** backend service. This REST API handles event man
 ## Quick Start
 
 ### Prerequisites
+
 - [Git](https://git-scm.com/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Node.js 18+](https://nodejs.org/) (optional, for local development)
@@ -45,15 +46,15 @@ Your API will be running on **http://localhost:5000**
 
 ## Tech Stack
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Runtime** | Node.js + ESM | JavaScript runtime with ES modules |
-| **Framework** | Express.js | Lightweight REST API framework |
-| **Database ORM** | Prisma | Type-safe database access |
-| **Database** | PostgreSQL | Primary relational database |
-| **Containerization** | Docker & Docker-Compose | Isolated development environment |
-| **Dev Tool** | Nodemon | Auto-restart on file changes |
-| **Security** | JWT, TOTP | Authentication & fraud prevention |
+| Component            | Technology              | Purpose                            |
+| -------------------- | ----------------------- | ---------------------------------- |
+| **Runtime**          | Node.js + ESM           | JavaScript runtime with ES modules |
+| **Framework**        | Express.js              | Lightweight REST API framework     |
+| **Database ORM**     | Prisma                  | Type-safe database access          |
+| **Database**         | PostgreSQL              | Primary relational database        |
+| **Containerization** | Docker & Docker-Compose | Isolated development environment   |
+| **Dev Tool**         | Nodemon                 | Auto-restart on file changes       |
+| **Security**         | JWT, TOTP               | Authentication & fraud prevention  |
 
 ---
 
@@ -101,6 +102,7 @@ cp .env.example .env
 ```
 
 Edit `.env` and configure:
+
 - `JWT_SECRET` — Secret key for token generation
 - `JWT_EXPIRES_IN` — Token expiration period (e.g., "3d")
 - `CLOUDINARY_*` — Media upload credentials
@@ -138,6 +140,7 @@ docker-compose logs -f
 ```
 
 **Server Details:**
+
 - **API URL:** http://localhost:5000
 - **Database Port:** 5432
 - **Auto-reload:** Enabled via Nodemon (changes in `src/` trigger restart)
@@ -180,6 +183,7 @@ npx prisma studio
 ```
 
 This launches an interactive GUI at http://localhost:5555 where you can:
+
 - View all database records
 - Create, update, delete data
 - Monitor relationships
@@ -200,34 +204,40 @@ This launches an interactive GUI at http://localhost:5555 where you can:
 Our system implements multiple layers of security for gate verification:
 
 #### 1. Time-Based One-Time Passwords (TOTP)
+
 - QR code data regenerates every **30 seconds**
 - ±1 step clock tolerance for network lag & phone drift
 - Prevents screenshot/replay attacks
 
 #### 2. Atomic Single-Use Verification
+
 - Once a guest checks in, their `checkedIn` flag is locked atomically
 - Duplicate token scans are rejected with `400 Bad Request`
 - Security violations are logged for audit trail
 
 #### 3. JWT Authentication
+
 - All protected endpoints require valid JWT in headers
 - Token expiry enforced server-side
 - Secure secret rotation recommended
 
 #### 4. QR Token Isolation
+
 - Each guest gets a unique, non-reusable `qrToken`
 - Tokens are UUID-based and database-indexed
 - Cannot be predicted or forged
 
 ### Best Practices for Team
 
- **DO:**
+**DO:**
+
 - Send authorization tokens in `Authorization: Bearer <token>` header
 - Validate token expiry before API calls
 - Log all gate verification attempts
 - Hash passwords before storage
 
- **DON'T:**
+  **DON'T:**
+
 - Expose JWT secrets in client code
 - Hardcode credentials in repositories
 - Store sensitive data in local storage
@@ -285,27 +295,27 @@ DELETE /media/:id              # Delete media
 
 ### Docker Issues
 
-| Problem | Solution |
-|---------|----------|
-| `docker: command not found` | Restart Docker Desktop or terminal |
-| `Port 5000 already in use` | `docker-compose down` or change port in `docker-compose.yml` |
-| `Cannot connect to PostgreSQL` | Ensure `docker-compose up` ran successfully, check logs |
+| Problem                        | Solution                                                     |
+| ------------------------------ | ------------------------------------------------------------ |
+| `docker: command not found`    | Restart Docker Desktop or terminal                           |
+| `Port 5000 already in use`     | `docker-compose down` or change port in `docker-compose.yml` |
+| `Cannot connect to PostgreSQL` | Ensure `docker-compose up` ran successfully, check logs      |
 
 ### Database Issues
 
-| Problem | Solution |
-|---------|----------|
-| `Prisma client not found` | Run `npm install` and rebuild containers |
-| `Migration failed` | Check schema syntax, review Prisma docs |
-| `Database locked` | Restart Docker: `docker-compose restart db` |
+| Problem                   | Solution                                    |
+| ------------------------- | ------------------------------------------- |
+| `Prisma client not found` | Run `npm install` and rebuild containers    |
+| `Migration failed`        | Check schema syntax, review Prisma docs     |
+| `Database locked`         | Restart Docker: `docker-compose restart db` |
 
 ### Development Issues
 
-| Problem | Solution |
-|---------|----------|
+| Problem                | Solution                                               |
+| ---------------------- | ------------------------------------------------------ |
 | Changes not reflecting | Ensure nodemon is running; check `docker-compose logs` |
-| Port conflicts | Modify `docker-compose.yml` port mappings |
-| Module not found | Clear node_modules and reinstall: `npm install` |
+| Port conflicts         | Modify `docker-compose.yml` port mappings              |
+| Module not found       | Clear node_modules and reinstall: `npm install`        |
 
 ### Check Status
 
@@ -328,28 +338,30 @@ docker-compose up --build --force-recreate
 ## Support & Questions
 
 For issues, questions, or feature requests:
+
 1. Check this README and existing GitHub issues
 2. Create a new GitHub issue with detailed description
 3. Contact the backend team lead
 
 ---
 
-## 📝 Branch & Workflow Guidelines
+## Branch & Workflow Guidelines
 
-### ⚠️ Critical Rules
+### Critical Rules
 
-1. **NEVER push directly to `main`** ❌
+1. **NEVER push directly to `main`** 
    - `main` is a protected branch for production-ready code only
    - All changes must go through a Pull Request
 
-2. **Always create a feature branch** ✅
+2. **Always create a feature branch** 
+
    ```bash
    git checkout -b feature/your-feature-name
    git checkout -b fix/bug-name
    git checkout -b docs/documentation-update
    ```
 
-3. **Never merge a PR without review** ✅
+3. **Never merge a PR without review**
    - All PRs must have at least **1 approval** from a team member
    - Address all review comments before merging
    - Resolve conflicts with the reviewer before merging
@@ -385,6 +397,7 @@ git push origin feature/your-feature
 ### Commit Message Format
 
 Use conventional commits for clarity:
+
 - `feat:` — New feature
 - `fix:` — Bug fix
 - `docs:` — Documentation updates
@@ -397,6 +410,7 @@ Example: `git commit -m "feat: add QR code validation endpoint"`
 ### Pull Request Checklist
 
 Before submitting a PR:
+
 - ✅ Branch created from latest `main`
 - ✅ Code follows project style guidelines
 - ✅ Tests added/updated for changes
@@ -407,7 +421,7 @@ Before submitting a PR:
 
 ---
 
-## 📝 Additional Notes for Team Members
+## Additional Notes for Team Members
 
 - **Code Style:** Follow ESLint configuration in project
 - **Testing:** Add tests for new endpoints before PR submission
@@ -415,4 +429,4 @@ Before submitting a PR:
 - **Database Migrations:** Test migrations locally before pushing
 - **Environment Variables:** Never commit `.env` files (they're in `.gitignore`)
 
-Happy coding! 
+Happy coding!
