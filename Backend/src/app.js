@@ -1,5 +1,4 @@
-// backend/src/app.js
-import "dotenv/config"; // Automatically loads your local .env file
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
