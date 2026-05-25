@@ -334,46 +334,85 @@ For issues, questions, or feature requests:
 
 ---
 
-## Notes for Team Members
+## 📝 Branch & Workflow Guidelines
 
-### ⚠️ IMPORTANT: Branch Workflow
+### ⚠️ Critical Rules
 
-**NEVER push directly to the `main` branch!**
+1. **NEVER push directly to `main`** ❌
+   - `main` is a protected branch for production-ready code only
+   - All changes must go through a Pull Request
 
-Always follow this workflow:
+2. **Always create a feature branch** ✅
+   ```bash
+   git checkout -b feature/your-feature-name
+   git checkout -b fix/bug-name
+   git checkout -b docs/documentation-update
+   ```
+
+3. **Never merge a PR without review** ✅
+   - All PRs must have at least **1 approval** from a team member
+   - Address all review comments before merging
+   - Resolve conflicts with the reviewer before merging
+
+4. **Prevent merge conflicts**
+   - Keep commits small and focused
+   - Pull latest changes before starting work: `git pull origin main`
+   - Rebase before submitting PR if main has new commits
+
+### Recommended Workflow
 
 ```bash
-# 1. Create a new feature branch from main
+# 1. Pull latest from main
 git checkout main
 git pull origin main
-git checkout -b feature/your-feature-name
 
-# 2. Make your changes and commit
+# 2. Create a feature branch
+git checkout -b feature/your-feature
+
+# 3. Make changes and commit
 git add .
-git commit -m "feat: add your feature description"
+git commit -m "feat: add new feature"
 
-# 3. Push to your feature branch (NOT main)
-git push origin feature/your-feature-name
+# 4. Push to your branch (NOT main)
+git push origin feature/your-feature
 
-# 4. Create a Pull Request on GitHub
-# - Go to https://github.com/Johnsonchuks/MyGuestly-AI
-# - Create PR from your branch → main
-# - Wait for review and approval before merging
+# 5. Open a Pull Request on GitHub
+# - Wait for reviews
+# - Address feedback
+# - Don't merge until approved
 ```
 
-**Branch Naming Convention:**
-- Features: `feature/user-authentication`
-- Bug fixes: `fix/qr-verification-bug`
-- Docs: `docs/api-documentation`
-- Chores: `chore/update-dependencies`
+### Commit Message Format
 
-### Other Guidelines
+Use conventional commits for clarity:
+- `feat:` — New feature
+- `fix:` — Bug fix
+- `docs:` — Documentation updates
+- `refactor:` — Code restructuring
+- `test:` — Test additions/updates
+- `chore:` — Build, dependencies, tooling
+
+Example: `git commit -m "feat: add QR code validation endpoint"`
+
+### Pull Request Checklist
+
+Before submitting a PR:
+- ✅ Branch created from latest `main`
+- ✅ Code follows project style guidelines
+- ✅ Tests added/updated for changes
+- ✅ Documentation updated
+- ✅ Commit messages are clear and descriptive
+- ✅ No merge conflicts with `main`
+- ✅ No sensitive data committed (check `.gitignore`)
+
+---
+
+## 📝 Additional Notes for Team Members
 
 - **Code Style:** Follow ESLint configuration in project
-- **Commit Messages:** Use conventional commits (feat:, fix:, docs:, chore:, etc.)
 - **Testing:** Add tests for new endpoints before PR submission
-- **Documentation:** Update API docs when adding/modifying endpoints
-- **Reviews:** Request review from team leads before merging
-- **Merge:** Only merge after approval and all checks pass
+- **API Documentation:** Update API docs when adding/modifying endpoints
+- **Database Migrations:** Test migrations locally before pushing
+- **Environment Variables:** Never commit `.env` files (they're in `.gitignore`)
 
 Happy coding! 
