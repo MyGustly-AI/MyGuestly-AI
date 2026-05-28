@@ -1,3 +1,18 @@
+# Dependencies
+node_modules/
+dist/
+.json
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# System files
+.DS_Store
+Thumbs.db
+
+/generated/prisma
 # Logs
 logs
 *.log
