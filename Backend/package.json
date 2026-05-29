@@ -4,23 +4,50 @@
   "type": "module",
   "main": "src/app.js",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/server.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SODUSOLA/MyGuestly-AI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SODUSOLA/MyGuestly-AI/issues"
+  },
+  "homepage": "https://github.com/SODUSOLA/MyGuestly-AI#readme",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bullmq": "^5.77.6",
     "cloudinary": "^2.10.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "helmet": "^8.2.0",
+    "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.3",
-    "qrcode": "^1.5.4"
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "qrcode": "^1.5.4",
+    "redis": "^5.12.1",
+    "socket.io": "^4.8.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@prisma/client": "^7.8.0",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
     "nodemon": "^3.1.14",
-    "prisma": "^7.8.0"
+    "prettier": "^3.8.3",
+    "prisma": "^6.19.3"
+  },
+  "description": "Welcome to the **MyGuestly AI** backend service. This REST API handles event management, secure guest authentication, QR code verification, and real-time gate access control with built-in anti-fraud mechanisms.",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
   }
 }

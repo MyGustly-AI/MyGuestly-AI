@@ -1,0 +1,27 @@
+# Stage 1: Install deps
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
+# Stage 2: Worker image
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+COPY src ./src
+COPY package*.json ./
+
+RUN npx prisma generate
+
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+# WORKER_ENTRY is passed per-service in docker-compose
+# e.g.  src/queues/workers/media.worker.js
+#CMD ["node", "${WORKER_ENTRY}"]

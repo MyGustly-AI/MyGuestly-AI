@@ -6,77 +6,319 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
-  
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────
 
-// Host / User Model (The person organizing events)
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String   // Hashed password
-  role      String   @default("HOST") // HOST, PHOTOGRAPHER, ADMIN
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  events    Event[]  // One host can create many events
+  id         String    @id @default(uuid())
+  fullName   String
+  email      String    @unique
+  phone      String?   @unique
+  password   String
+  role       Role      @default(HOST)
+  isVerified Boolean   @default(false)
+  avatarUrl  String?
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  events        Event[]
+  invitations   Invitation[]
+  mediaUploads  Media[]
+  memories      Memory[]
+  comments      Comment[]
+  likes         Like[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([deletedAt])
 }
 
-// Event Model (The core hub for invitations and galleries)
+enum Role {
+  SUPER_ADMIN
+  HOST
+  PHOTOGRAPHER
+  GUEST
+}
+
+// ─────────────────────────────────────────
+// EVENT
+// ─────────────────────────────────────────
+
 model Event {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
   date        DateTime
-  venue       String   // Venue location in Lagos
-  eventCode   String   @unique // Short readable code for guests to join manually
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  hostId      String
-  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
-  
-  guests      Guest[]  // An event can have many invited guests
-  media       Media[]  // An event has a shared collaborative timeline
+  endDate     DateTime?
+  venue       String
+  eventCode   String    @unique
+  capacity    Int?
+  isPublished Boolean   @default(false)
+  coverUrl    String?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  hostId String
+  host   User   @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  guests        Guest[]
+  invitations   Invitation[]
+  qrCodes       QRCode[]
+  checkIns      CheckIn[]
+  media         Media[]
+  memories      Memory[]
+  notifications Notification[]
+
+  @@index([hostId])
+  @@index([date])
+  @@index([deletedAt])
 }
 
-// Guest Model (Manages RSVPs and individual QR Gate Passes)
+// ─────────────────────────────────────────
+// GUEST
+// Bulk-imported guest list entry may or may not have a registered User account
+// ─────────────────────────────────────────
+
 model Guest {
-  id          String   @id @default(uuid())
-  name        String
-  phone       String?
-  email       String?
-  rsvpStatus  String   @default("PENDING") // PENDING, CONFIRMED, DECLINED
-  
-  // This unique token is encoded into the QR code sent to the guest.
-  // When scanned at the gate, the backend checks this exact token.
-  qrToken     String   @unique @default(uuid())
-  checkedIn   Boolean  @default(false)
-  checkInTime DateTime?
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  eventId     String
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId    String
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  invitation Invitation?
+  checkIn    CheckIn?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([eventId, email]) // Prevents inviting the same email twice to the same event
-  @@unique([eventId, phone]) // Prevents inviting the same phone number twice to the same event
+  @@unique([eventId, email])
+  @@unique([eventId, phone])
+  @@index([eventId])
 }
 
-// Media Model (The Collaborative Post-Event Timeline)
-model Media {
-  id          String   @id @default(uuid())
-  url         String   // Cloudinary secure URL for the photo/video
-  mediaType   String   // IMAGE or VIDEO
-  uploadedBy  String   // "GUEST" or User ID if uploaded by the Photographer/Host
-  voiceNoteUrl String? // Optional audio wish attached to this media moment
-  createdAt   DateTime @default(now()) // Used to automatically sort the timeline chronologically
+// ─────────────────────────────────────────
+// INVITATION
+// Tracks RSVP status per guest per event
+// ─────────────────────────────────────────
 
-  eventId     String
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+model Invitation {
+  id        String           @id @default(uuid())
+  status    InvitationStatus @default(PENDING)
+  token     String           @unique @default(uuid())
+  rsvpAt    DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId String @unique
+  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  userId  String?
+  user    User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  qrCode QRCode?
+
+  @@index([eventId])
+  @@index([token])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CHECKED_IN
+}
+
+// ─────────────────────────────────────────
+// QR CODE
+// One QR code per invitation — used at gate
+// ─────────────────────────────────────────
+
+model QRCode {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  isScanned   Boolean   @default(false)
+  scannedAt   DateTime?
+  scannedByIp String?
+  createdAt   DateTime  @default(now())
+
+  invitationId String     @unique
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  eventId      String
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([eventId])
+}
+
+// ─────────────────────────────────────────
+// CHECK-IN
+// Written when a guest scans in at the gate
+// ─────────────────────────────────────────
+
+model CheckIn {
+  id          String   @id @default(uuid())
+  checkedAt   DateTime @default(now())
+  checkedByIp String?
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId String @unique
+  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+// ─────────────────────────────────────────
+// MEDIA
+// ─────────────────────────────────────────
+
+model Media {
+  id           String    @id @default(uuid())
+  url          String
+  publicId     String
+  mediaType    MediaType
+  size         Int?
+  width        Int?
+  height       Int?
+  duration     Float?
+  voiceNoteUrl String?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+
+  eventId    String
+  event      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploaderId String
+  uploader   User       @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  tags     MediaTag[]
+  comments Comment[]
+  likes    Like[]
+
+  @@index([eventId])
+  @@index([uploaderId])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+}
+
+// ─────────────────────────────────────────
+// MEDIA TAG
+// AI-generated labels attached to media
+// ─────────────────────────────────────────
+
+model MediaTag {
+  id         String @id @default(uuid())
+  label      String
+  confidence Float?
+
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, label])
+  @@index([mediaId])
+}
+
+// ─────────────────────────────────────────
+// MEMORY
+// Text or voice note left by a guest
+// ─────────────────────────────────────────
+
+model Memory {
+  id        String     @id @default(uuid())
+  type      MemoryType
+  content   String?
+  audioUrl  String?
+  createdAt DateTime   @default(now())
+
+  eventId  String
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+enum MemoryType {
+  TEXT
+  VOICE
+}
+
+// ─────────────────────────────────────────
+// COMMENT
+// ─────────────────────────────────────────
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  mediaId  String
+  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([mediaId])
+}
+
+// ─────────────────────────────────────────
+// LIKE
+// ─────────────────────────────────────────
+
+model Like {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, userId])
+  @@index([mediaId])
+}
+
+// ─────────────────────────────────────────
+// NOTIFICATION
+// ─────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId String?
+  event   Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+  @@index([eventId])
+}
+
+enum NotificationType {
+  INVITATION_SENT
+  RSVP_RECEIVED
+  EVENT_UPDATED
+  EVENT_REMINDER
+  MEDIA_UPLOADED
+  QR_SCANNED
 }

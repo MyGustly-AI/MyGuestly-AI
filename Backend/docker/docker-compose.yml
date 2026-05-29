@@ -1,0 +1,171 @@
+services:
+
+  # Express API
+  api:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.api
+
+    container_name: myguestly_api
+
+    restart: unless-stopped
+
+    env_file: 
+      - ../.env
+
+    ports:
+      - "5003:5003"
+    volumes:
+      - ../:/app
+      - /app/node_modules
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - myguestly_network
+
+# Prisma Studio
+  prisma-studio:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.api
+    container_name: myguestly_prisma_studio
+    command: npx prisma studio --hostname 0.0.0.0 --port 5555
+    env_file:
+      - ../.env
+    ports:
+      - "5555:5555"
+    depends_on:
+      - postgres
+    networks:
+      - myguestly_network
+
+  # Media Worker
+  # media-worker:
+  #   build:
+  #     context: ../
+  #     dockerfile: docker/Dockerfile.worker
+  #   container_name: myguestly_media_worker
+  #   restart: unless-stopped
+  #   env_file: 
+  #     - ../.env
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+  #     REDIS_URL: redis://redis:6379
+  #   command: ["node", "src/queues/workers/media.worker.js"]
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - myguestly_network
+
+  # # Invitation Worker
+  # invite-worker:
+  #   build:
+  #     context: ../
+  #     dockerfile: docker/Dockerfile.worker
+  #   container_name: myguestly_invite_worker
+  #   restart: unless-stopped
+  #   env_file: 
+  #     - ../.env
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+  #     REDIS_URL: redis://redis:6379
+  #   command: ["node", "src/queues/workers/invitation.worker.js"]
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - myguestly_network
+
+  # # AI Worker
+  # ai-worker:
+  #   build:
+  #     context: ../
+  #     dockerfile: docker/Dockerfile.worker
+  #   container_name: myguestly_ai_worker
+  #   restart: unless-stopped
+  #   env_file: 
+  #     - ../.env
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+  #     REDIS_URL: redis://redis:6379
+  #   command: ["node", "src/queues/workers/notification.worker.js"]
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - myguestly_network
+
+  # PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: myguestly_postgres
+
+    env_file:
+      - ../.env
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - myguestly_network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d myguestly_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: myguestly_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - myguestly_network
+
+  #Nginx
+  nginx:
+    build:
+      context: ../nginx
+      dockerfile: Dockerfile
+    container_name: myguestly_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - myguestly_network
+
+networks:
+  myguestly_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
