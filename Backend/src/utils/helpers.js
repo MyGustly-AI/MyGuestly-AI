@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 /**
  * JWT Token Utilities
@@ -17,7 +18,8 @@ export class JwtUtil {
     };
 
     const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
-    const secret = process.env.JWT_SECRET || "your-secret-key";
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error("Missing JWT_SECRET environment variable");
 
     return jwt.sign(payload, secret, { expiresIn });
   }
@@ -32,7 +34,9 @@ export class JwtUtil {
     };
 
     const expiresIn = "30d";
-    const secret = process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key";
+    const secret = process.env.JWT_REFRESH_SECRET;
+    if (!secret)
+      throw new Error("Missing JWT_REFRESH_SECRET environment variable");
 
     return jwt.sign(payload, secret, { expiresIn });
   }
@@ -42,7 +46,8 @@ export class JwtUtil {
    */
   static verifyAccessToken(token) {
     try {
-      const secret = process.env.JWT_SECRET || "your-secret-key";
+      const secret = process.env.JWT_SECRET;
+      if (!secret) throw new Error("Missing JWT_SECRET environment variable");
       return jwt.verify(token, secret);
     } catch (error) {
       throw new Error("Invalid or expired token");
@@ -54,7 +59,9 @@ export class JwtUtil {
    */
   static verifyRefreshToken(token) {
     try {
-      const secret = process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key";
+      const secret = process.env.JWT_REFRESH_SECRET;
+      if (!secret)
+        throw new Error("Missing JWT_REFRESH_SECRET environment variable");
       return jwt.verify(token, secret);
     } catch (error) {
       throw new Error("Invalid or expired refresh token");
@@ -173,17 +180,16 @@ export class PasswordUtil {
    * Hash password (basic - use bcrypt in production)
    */
   static hashPassword(password) {
-    // TODO: Replace with bcrypt for production
-    return crypto.createHash("sha256").update(password).digest("hex");
+    // Use bcrypt for password hashing
+    const saltRounds = 10;
+    return bcrypt.hashSync(password, saltRounds);
   }
 
   /**
    * Compare password (basic - use bcrypt in production)
    */
   static comparePassword(plainPassword, hashedPassword) {
-    // TODO: Replace with bcrypt for production
-    const hash = crypto.createHash("sha256").update(plainPassword).digest("hex");
-    return hash === hashedPassword;
+    return bcrypt.compareSync(plainPassword, hashedPassword);
   }
 
   /**
@@ -326,10 +332,7 @@ export class DateUtil {
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
 
-    return format
-      .replace("DD", day)
-      .replace("MM", month)
-      .replace("YYYY", year);
+    return format.replace("DD", day).replace("MM", month).replace("YYYY", year);
   }
 }
 

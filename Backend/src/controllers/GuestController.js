@@ -3,8 +3,10 @@ import { GuestService } from "../services/GuestService.js";
 import { EventService } from "../services/EventService.js";
 import { AppError } from "../utils/AppError.js";
 import { prisma } from "../utils/prisma.js";
+import EmailService from "../utils/emailService.js";
+import env from "../config/env.js";
 
-const BASE_URL = process.env.APP_URL || "http://localhost:3000";
+const BASE_URL = env.APP_URL;
 
 class GuestController extends BaseController {
   constructor() {
@@ -45,6 +47,18 @@ class GuestController extends BaseController {
       rsvpStatus: guest.rsvpStatus,
     };
 
+    // Send invitation email (if email present)
+    try {
+      await EmailService.sendInvitation({
+        guest,
+        event,
+        invitationLink: invitation.invitationLink,
+      });
+    } catch (err) {
+      // Log and continue — email failures shouldn't block creation
+      console.error("Invitation email failed:", err?.message || err);
+    }
+
     this.created(res, "Guest invited successfully", {
       guest,
       invitation,
@@ -65,6 +79,26 @@ class GuestController extends BaseController {
     }
 
     const result = await this.guestService.bulkInviteGuests(eventId, guests);
+    // Try sending emails for guests that have an email address
+    try {
+      const invites = guests
+        .filter((g) => g.email)
+        .map((g) => ({ name: g.name, email: g.email }));
+      for (const g of invites) {
+        // Create a lightweight guest record to generate link
+        // Note: bulkInvite created records already, but we don't have their ids/qr tokens here.
+        // For now, send a simple notification with event details and request they visit the RSVP page.
+        const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}`;
+        await EmailService.sendMail({
+          to: g.email,
+          subject: `Invitation: ${event.title}`,
+          html: `<p>Hi ${g.name || "Guest"},</p><p>You are invited to <strong>${event.title}</strong>. RSVP here: <a href="${invitationLink}">${invitationLink}</a></p>`,
+        });
+      }
+    } catch (err) {
+      console.error("Bulk invitation email(s) failed:", err?.message || err);
+    }
+
     this.created(res, "Guest invitations created", result);
   });
 
