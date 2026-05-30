@@ -3,9 +3,7 @@
  * Standardize data format for requests and responses
  */
 
-// ============================================
 // AUTH DTOs
-// ============================================
 export class LoginResponseDTO {
   constructor(user, accessToken, refreshToken) {
     this.user = {
@@ -30,16 +28,15 @@ export class UserProfileDTO {
   }
 }
 
-// ============================================
 // EVENT DTOs
-// ============================================
 export class EventCreateDTO {
   constructor(data) {
     this.title = data.title;
     this.description = data.description;
-    this.date = data.date;
-    this.venue = data.venue;
-    this.capacity = data.capacity || 0;
+    this.startDate = data.startDate;
+    this.endDate = data.endDate;
+    this.location = data.location;
+    this.maxGuests = data.maxGuests || 0;
   }
 }
 
@@ -48,10 +45,15 @@ export class EventResponseDTO {
     this.id = event.id;
     this.title = event.title;
     this.description = event.description;
-    this.date = event.date;
-    this.venue = event.venue;
+    this.startDate = event.startDate;
+    this.endDate = event.endDate;
+    this.location = event.location;
     this.eventCode = event.eventCode;
-    this.capacity = event.capacity;
+    this.status = event.status;
+    this.maxGuests = event.maxGuests;
+    this.publishedAt = event.publishedAt || null;
+    this.startedAt = event.startedAt || null;
+    this.endedAt = event.endedAt || null;
     this.hostId = event.hostId;
     this.createdAt = event.createdAt;
     this.updatedAt = event.updatedAt;
@@ -64,17 +66,17 @@ export class EventListItemDTO {
   constructor(event) {
     this.id = event.id;
     this.title = event.title;
-    this.date = event.date;
-    this.venue = event.venue;
+    this.startDate = event.startDate;
+    this.endDate = event.endDate;
+    this.location = event.location;
     this.eventCode = event.eventCode;
     this.guestCount = event.guests?.length || 0;
-    this.rsvpCount = event.guests?.filter((g) => g.rsvpStatus === "CONFIRMED").length || 0;
+    this.rsvpCount =
+      event.guests?.filter((g) => g.rsvpStatus === "CONFIRMED").length || 0;
   }
 }
 
-// ============================================
 // GUEST DTOs
-// ============================================
 export class GuestInviteDTO {
   constructor(data) {
     this.name = data.name;
@@ -107,26 +109,23 @@ export class GuestPublicResponseDTO {
   }
 }
 
-// ============================================
 // INVITATION DTOs
-// ============================================
 export class InvitationResponseDTO {
   constructor(guest, event) {
     this.guestId = guest.id;
     this.guestName = guest.name;
     this.eventId = event.id;
     this.eventTitle = event.title;
-    this.eventDate = event.date;
-    this.venue = event.venue;
+    this.eventStartDate = event.startDate;
+    this.eventEndDate = event.endDate;
+    this.location = event.location;
     this.qrToken = guest.qrToken;
     this.rsvpStatus = guest.rsvpStatus;
     this.eventCode = event.eventCode;
   }
 }
 
-// ============================================
 // MEDIA DTOs
-// ============================================
 export class MediaUploadDTO {
   constructor(data) {
     this.mediaType = data.mediaType;
@@ -146,9 +145,7 @@ export class MediaResponseDTO {
   }
 }
 
-// ============================================
 // MEMORY DTOs
-// ============================================
 export class MemoryCreateDTO {
   constructor(data) {
     this.content = data.content;
@@ -168,9 +165,7 @@ export class MemoryResponseDTO {
   }
 }
 
-// ============================================
 // QR CHECK-IN DTOs
-// ============================================
 export class CheckInResponseDTO {
   constructor(guest) {
     this.guestId = guest.id;
@@ -192,9 +187,7 @@ export class CheckInSummaryDTO {
   }
 }
 
-// ============================================
 // PAGINATION DTOs
-// ============================================
 export class PaginationMetaDTO {
   constructor(page, limit, total) {
     this.page = page;

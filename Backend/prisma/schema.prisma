@@ -4,9 +4,8 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-  
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client/.prisma/client"
 }
 
 datasource db {
@@ -31,15 +30,21 @@ model Event {
   id          String   @id @default(uuid())
   title       String
   description String?
-  date        DateTime
-  venue       String   // Venue location in Lagos
+  startDate   DateTime
+  endDate     DateTime
+  location    String   // Venue location or address
   eventCode   String   @unique // Short readable code for guests to join manually
+  status      String   @default("DRAFT")
+  maxGuests   Int      @default(0)
+  publishedAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   hostId      String
   host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
-  
+
   guests      Guest[]  // An event can have many invited guests
   media       Media[]  // An event has a shared collaborative timeline
 }

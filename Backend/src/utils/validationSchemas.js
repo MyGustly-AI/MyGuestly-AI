@@ -5,9 +5,7 @@ import Joi from "joi";
  * Used for request validation across all endpoints
  */
 
-// ============================================
 // AUTH SCHEMAS
-// ============================================
 export const authSchemas = {
   register: Joi.object({
     name: Joi.string().min(2).max(100).required(),
@@ -26,36 +24,34 @@ export const authSchemas = {
   }),
 };
 
-// ============================================
 // EVENT SCHEMAS
-// ============================================
 export const eventSchemas = {
   create: Joi.object({
     title: Joi.string().min(3).max(200).required(),
     description: Joi.string().max(1000).optional(),
-    date: Joi.date().min("now").required(),
-    venue: Joi.string().min(3).max(200).required(),
-    capacity: Joi.number().integer().min(1).optional(),
+    startDate: Joi.date().iso().required(),
+    endDate: Joi.date().iso().required(),
+    location: Joi.string().min(3).max(200).required(),
+    maxGuests: Joi.number().integer().min(1).max(10000).required(),
   }),
 
   update: Joi.object({
     title: Joi.string().min(3).max(200).optional(),
     description: Joi.string().max(1000).optional(),
-    date: Joi.date().min("now").optional(),
-    venue: Joi.string().min(3).max(200).optional(),
-    capacity: Joi.number().integer().min(1).optional(),
+    location: Joi.string().min(3).max(200).optional(),
+    maxGuests: Joi.number().integer().min(1).max(10000).optional(),
   }),
 
   list: Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
-    status: Joi.string().valid("UPCOMING", "ONGOING", "COMPLETED").optional(),
+    status: Joi.string()
+      .valid("DRAFT", "ACTIVE", "ONGOING", "COMPLETED")
+      .optional(),
   }),
 };
 
-// ============================================
 // GUEST SCHEMAS
-// ============================================
 export const guestSchemas = {
   invite: Joi.object({
     name: Joi.string().min(2).max(100).required(),
@@ -93,9 +89,7 @@ export const guestSchemas = {
   }),
 };
 
-// ============================================
 // MEDIA SCHEMAS
-// ============================================
 export const mediaSchemas = {
   upload: Joi.object({
     mediaType: Joi.string().valid("IMAGE", "VIDEO").required(),
@@ -115,9 +109,7 @@ export const mediaSchemas = {
   }),
 };
 
-// ============================================
 // MEMORY SCHEMAS
-// ============================================
 export const memorySchemas = {
   addMemory: Joi.object({
     content: Joi.string().max(1000).required(),
@@ -137,18 +129,14 @@ export const memorySchemas = {
   }),
 };
 
-// ============================================
 // QR VERIFICATION SCHEMAS
-// ============================================
 export const qrSchemas = {
   verify: Joi.object({
     token: Joi.string().uuid().required(),
   }),
 };
 
-// ============================================
 // VALIDATION UTILITY
-// ============================================
 export const validateRequest = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.body, {
@@ -175,9 +163,7 @@ export const validateRequest = (schema) => {
   };
 };
 
-// ============================================
 // VALIDATION UTILITY FOR QUERY PARAMS
-// ============================================
 export const validateQuery = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.query, {
