@@ -19,8 +19,20 @@ class EventController extends BaseController {
    * Create a new event
    */
   createEvent = this.asyncHandler(async (req, res) => {
-    const { title, description, startDate, endDate, maxGuests, location } =
-      req.body;
+    const {
+      title,
+      description,
+      eventCategory,
+      venueName,
+      address,
+      coverUrl,
+      themeAccent,
+      rsvpDeadline,
+      startDate,
+      endDate,
+      maxGuests,
+      location,
+    } = req.body;
     const hostId = req.user.id;
 
     // Validate capacity
@@ -35,9 +47,25 @@ class EventController extends BaseController {
       return this.badRequest(res, "Start date must be before end date");
     }
 
+    if (rsvpDeadline) {
+      const rsvpDate = new Date(rsvpDeadline);
+      if (rsvpDate >= start) {
+        return this.badRequest(
+          res,
+          "RSVP deadline must be before the event start date",
+        );
+      }
+    }
+
     const event = await this.eventService.createEvent({
       title,
       description,
+      eventCategory,
+      venueName,
+      address,
+      coverUrl,
+      themeAccent,
+      rsvpDeadline: rsvpDeadline ? new Date(rsvpDeadline) : null,
       startDate: start,
       endDate: end,
       maxGuests,
@@ -113,12 +141,47 @@ class EventController extends BaseController {
 
     if (req.body.title) updateData.title = req.body.title;
     if (req.body.description) updateData.description = req.body.description;
+    if (req.body.eventCategory)
+      updateData.eventCategory = req.body.eventCategory;
+    if (req.body.venueName) updateData.venueName = req.body.venueName;
+    if (req.body.address) updateData.address = req.body.address;
+    if (req.body.coverUrl) updateData.coverUrl = req.body.coverUrl;
+    if (req.body.themeAccent) updateData.themeAccent = req.body.themeAccent;
+    if (req.body.rsvpDeadline)
+      updateData.rsvpDeadline = new Date(req.body.rsvpDeadline);
+    if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
+    if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
     if (req.body.location) updateData.location = req.body.location;
     if (req.body.maxGuests) {
       if (req.body.maxGuests < 1 || req.body.maxGuests > 10000) {
         return this.badRequest(res, "Max guests must be between 1 and 10000");
       }
       updateData.maxGuests = req.body.maxGuests;
+    }
+
+    if (updateData.startDate && updateData.endDate) {
+      if (updateData.startDate >= updateData.endDate) {
+        return this.badRequest(res, "Start date must be before end date");
+      }
+    }
+
+    if (updateData.startDate && event.rsvpDeadline) {
+      if (updateData.startDate <= event.rsvpDeadline) {
+        return this.badRequest(
+          res,
+          "Event start date must be after the existing RSVP deadline",
+        );
+      }
+    }
+
+    if (updateData.rsvpDeadline) {
+      const startDateToCompare = updateData.startDate || event.startDate;
+      if (startDateToCompare && updateData.rsvpDeadline >= startDateToCompare) {
+        return this.badRequest(
+          res,
+          "RSVP deadline must be before the event start date",
+        );
+      }
     }
 
     const updated = await this.eventService.updateEvent(eventId, updateData);

@@ -1,24 +1,30 @@
 /**
  * EVENT MODULE FLOW DESIGN
- * 
+ *
  * Core workflow: Create → Configure → Invite → Verify → Archive
  */
 
 export const EVENT_MODULE_FLOW = {
   /**
    * PHASE 1: EVENT CREATION
-   * 
+   *
    * POST /events
-   * 
+   *
    * Request:
    * {
    *   title: "Amara's Wedding Celebration",
    *   description: "A beautiful day with family and friends",
-   *   date: "2026-06-15T14:00:00Z",
-   *   venue: "Lagos Continental Hotel, Lagos",
-   *   capacity: 150
+   *   eventCategory: "Wedding",
+   *   venueName: "Lagos Continental Hotel",
+   *   address: "1A Akin Adesola Street, Victoria Island, Lagos",
+   *   coverUrl: "https://example.com/cover.jpg",
+   *   themeAccent: "Champagne Gold",
+   *   rsvpDeadline: "2026-06-01T23:59:59Z",
+   *   startDate: "2026-06-15T14:00:00Z",
+   *   endDate: "2026-06-15T20:00:00Z",
+   *   maxGuests: 150
    * }
-   * 
+   *
    * Response:
    * {
    *   success: true,
@@ -49,24 +55,22 @@ export const EVENT_MODULE_FLOW = {
       "4. Generate unique eventCode (ABC-123-DEF)",
       "5. Create event record",
       "6. Associate with host (userId)",
-      "7. Return event details"
+      "7. Return event details",
     ],
-    triggers: [
-      "Event created notification sent to host"
-    ]
+    triggers: ["Event created notification sent to host"],
   },
 
   /**
    * PHASE 2: EVENT CONFIGURATION
-   * 
+   *
    * PUT /events/{eventId}
-   * 
+   *
    * Request:
    * {
    *   title: "Updated title",
    *   capacity: 200
    * }
-   * 
+   *
    * Host can update event before invitations sent
    */
   phase2_configure: {
@@ -76,22 +80,22 @@ export const EVENT_MODULE_FLOW = {
     validationSchema: "eventSchemas.update",
     restrictions: [
       "Cannot change date to past date",
-      "Cannot reduce capacity below current guest count"
+      "Cannot reduce capacity below current guest count",
     ],
     process: [
       "1. Verify host owns event",
       "2. Validate update payload",
       "3. Check capacity constraints",
       "4. Update event record",
-      "5. Return updated event"
-    ]
+      "5. Return updated event",
+    ],
   },
 
   /**
    * PHASE 3: GUEST INVITATION
-   * 
+   *
    * See InvitationWorkflow.js for detailed flow
-   * 
+   *
    * POST /events/{eventId}/guests/bulk-invite
    */
   phase3_invite_guests: {
@@ -99,15 +103,15 @@ export const EVENT_MODULE_FLOW = {
     endpoints: [
       "POST /events/{eventId}/guests/bulk-invite",
       "GET /events/{eventId}/guests",
-      "PUT /guests/{guestId}/rsvp"
-    ]
+      "PUT /guests/{guestId}/rsvp",
+    ],
   },
 
   /**
    * PHASE 4: EVENT DASHBOARD (Before Event)
-   * 
+   *
    * GET /events/{eventId}/dashboard
-   * 
+   *
    * Response:
    * {
    *   success: true,
@@ -140,30 +144,27 @@ export const EVENT_MODULE_FLOW = {
       "Guest list",
       "Recent activity",
       "Confirmation rate",
-      "Media count"
-    ]
+      "Media count",
+    ],
   },
 
   /**
    * PHASE 5: GATE VERIFICATION (During Event)
-   * 
+   *
    * See QRVerificationWorkflow.js for detailed flow
-   * 
+   *
    * POST /verify-gate/{token}
    */
   phase5_gate_verification: {
     reference: "QRVerificationWorkflow.js",
-    endpoints: [
-      "POST /verify-gate/{token}",
-      "GET /events/{eventId}/check-ins"
-    ]
+    endpoints: ["POST /verify-gate/{token}", "GET /events/{eventId}/check-ins"],
   },
 
   /**
    * PHASE 6: REAL-TIME UPDATES (During Event)
-   * 
+   *
    * GET /events/{eventId}/live-stats
-   * 
+   *
    * Real-time data as guests check in
    * Response updates every few seconds
    */
@@ -176,15 +177,15 @@ export const EVENT_MODULE_FLOW = {
       "Check-in rate per minute",
       "No-show predictions",
       "Capacity status",
-      "Recent check-ins"
-    ]
+      "Recent check-ins",
+    ],
   },
 
   /**
    * PHASE 7: MEDIA UPLOAD & SHARING (During & After)
-   * 
+   *
    * See MediaUploadWorkflow.js for detailed flow
-   * 
+   *
    * POST /events/{eventId}/media
    * GET /events/{eventId}/media
    * GET /events/{eventId}/timeline
@@ -195,15 +196,15 @@ export const EVENT_MODULE_FLOW = {
       "POST /events/{eventId}/media",
       "POST /events/{eventId}/media/{mediaId}/voice-note",
       "GET /events/{eventId}/media",
-      "GET /events/{eventId}/timeline"
-    ]
+      "GET /events/{eventId}/timeline",
+    ],
   },
 
   /**
    * PHASE 8: EVENT ARCHIVE (After Event)
-   * 
+   *
    * GET /events/{eventId}/archive
-   * 
+   *
    * Complete event summary for records
    * Response:
    * {
@@ -232,15 +233,15 @@ export const EVENT_MODULE_FLOW = {
       "All media files",
       "All voice notes",
       "Guest list with check-in times",
-      "Event timeline"
-    ]
+      "Event timeline",
+    ],
   },
 
   /**
    * PHASE 9: DELETE EVENT
-   * 
+   *
    * DELETE /events/{eventId}
-   * 
+   *
    * Only allowed before event date or by admin
    * Archive is kept for records
    */
@@ -251,9 +252,9 @@ export const EVENT_MODULE_FLOW = {
     restrictions: [
       "Cannot delete past events (archive only)",
       "Confirmation required if media exists",
-      "Only event owner or admin can delete"
-    ]
-  }
+      "Only event owner or admin can delete",
+    ],
+  },
 };
 
 export const EVENT_LIFECYCLE_DIAGRAM = `
@@ -341,7 +342,7 @@ export const EVENT_STATUS_ENUM = {
   ACTIVE: "Invitations sent, accepting RSVPs",
   ONGOING: "Event is happening right now",
   COMPLETED: "Event finished, archive available",
-  CANCELLED: "Event cancelled by host"
+  CANCELLED: "Event cancelled by host",
 };
 
 export const EVENT_PERMISSIONS = {
@@ -353,13 +354,13 @@ export const EVENT_PERMISSIONS = {
     can_verify_gate: true,
     can_view_checkins: true,
     can_upload_media: true,
-    can_download_archive: true
+    can_download_archive: true,
   },
   PHOTOGRAPHER: {
     can_create: false,
     can_upload_media: true,
     can_view_media: true,
-    can_download_archive: true
+    can_download_archive: true,
   },
   GUEST: {
     can_view_event: true,
@@ -367,12 +368,12 @@ export const EVENT_PERMISSIONS = {
     can_upload_media: true,
     can_view_media: true,
     can_add_voice_note: true,
-    can_download_archive: false
+    can_download_archive: false,
   },
   ADMIN: {
     can_create: true,
     can_update_any: true,
     can_delete_any: true,
-    can_view_any: true
-  }
+    can_view_any: true,
+  },
 };

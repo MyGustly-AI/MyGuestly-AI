@@ -15,7 +15,7 @@ export class EventService extends BaseService {
 
   /**
    * Create Event
-   * @param {Object} eventData - { title, description, startDate, endDate, maxGuests, location, hostId }
+   * @param {Object} eventData - { title, description, eventCategory, venueName, address, coverUrl, themeAccent, rsvpDeadline, startDate, endDate, maxGuests, location, hostId }
    * @returns {Object} - Created event with QR code token
    */
   async createEvent(eventData) {
@@ -330,11 +330,17 @@ export class EventService extends BaseService {
       id: event.id,
       title: event.title,
       description: event.description,
+      eventCategory: event.eventCategory || null,
+      venueName: event.venueName || null,
+      address: event.address || null,
+      coverUrl: event.coverUrl || null,
+      themeAccent: event.themeAccent || null,
+      rsvpDeadline: event.rsvpDeadline || null,
       eventCode: event.eventCode,
       status: event.status,
       startDate: event.startDate,
       endDate: event.endDate,
-      location: event.location,
+      location: event.location || null,
       maxGuests: event.maxGuests,
       publishedAt: event.publishedAt || null,
       startedAt: event.startedAt || null,

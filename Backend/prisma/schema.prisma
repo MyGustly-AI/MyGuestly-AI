@@ -55,20 +55,26 @@ enum Role {
 // ─────────────────────────────────────────
 
 model Event {
-  id          String    @id @default(uuid())
-  title       String
-  description String?
-  startDate   DateTime
-  endDate     DateTime
-  location    String   // Venue location or address
-  eventCode   String   @unique // Short readable code for guests to join manually
-  status      String   @default("DRAFT")
-  maxGuests   Int      @default(0)
-  publishedAt DateTime?
-  startedAt   DateTime?
-  endedAt     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String    @id @default(uuid())
+  title         String
+  description   String?
+  eventCategory String?   // Category such as wedding, corporate, etc.
+  venueName     String?   // Event venue name
+  address       String?   // Venue address
+  location      String?   // Optional shorthand location or city
+  coverUrl      String?   // Event cover image url
+  themeAccent   String?   // Personalization/theme accent color or label
+  rsvpDeadline  DateTime? // RSVP deadline to close guest responses
+  startDate     DateTime
+  endDate       DateTime
+  eventCode     String    @unique // Short readable code for guests to join manually
+  status        String    @default("DRAFT")
+  maxGuests     Int       @default(0)
+  publishedAt   DateTime?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   hostId      String
   host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)

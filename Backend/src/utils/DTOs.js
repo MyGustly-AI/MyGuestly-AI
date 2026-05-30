@@ -33,9 +33,15 @@ export class EventCreateDTO {
   constructor(data) {
     this.title = data.title;
     this.description = data.description;
+    this.eventCategory = data.eventCategory;
+    this.venueName = data.venueName;
+    this.address = data.address;
+    this.coverUrl = data.coverUrl || null;
+    this.themeAccent = data.themeAccent || null;
+    this.rsvpDeadline = data.rsvpDeadline || null;
     this.startDate = data.startDate;
     this.endDate = data.endDate;
-    this.location = data.location;
+    this.location = data.location || null;
     this.maxGuests = data.maxGuests || 0;
   }
 }
@@ -45,9 +51,15 @@ export class EventResponseDTO {
     this.id = event.id;
     this.title = event.title;
     this.description = event.description;
+    this.eventCategory = event.eventCategory || null;
+    this.venueName = event.venueName || null;
+    this.address = event.address || null;
+    this.coverUrl = event.coverUrl || null;
+    this.themeAccent = event.themeAccent || null;
+    this.rsvpDeadline = event.rsvpDeadline || null;
     this.startDate = event.startDate;
     this.endDate = event.endDate;
-    this.location = event.location;
+    this.location = event.location || null;
     this.eventCode = event.eventCode;
     this.status = event.status;
     this.maxGuests = event.maxGuests;
@@ -66,9 +78,12 @@ export class EventListItemDTO {
   constructor(event) {
     this.id = event.id;
     this.title = event.title;
+    this.eventCategory = event.eventCategory || null;
+    this.venueName = event.venueName || null;
+    this.address = event.address || null;
     this.startDate = event.startDate;
     this.endDate = event.endDate;
-    this.location = event.location;
+    this.location = event.location || null;
     this.eventCode = event.eventCode;
     this.guestCount = event.guests?.length || 0;
     this.rsvpCount =
