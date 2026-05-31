@@ -4,13 +4,14 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Connection URL moved to runtime configuration for Prisma v7+.
+  // Set DATABASE_URL in your environment or configure an adapter when
+  // instantiating PrismaClient. Example: new PrismaClient({ adapter: 'postgresql' })
 }
 
 // ─────────────────────────────────────────
@@ -54,34 +55,41 @@ enum Role {
 // ─────────────────────────────────────────
 
 model Event {
-  id          String    @id @default(uuid())
-  title       String
-  description String?
-  date        DateTime
-  endDate     DateTime?
-  venue       String
-  eventCode   String    @unique
-  capacity    Int?
-  isPublished Boolean   @default(false)
-  coverUrl    String?
-  deletedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  title         String
+  description   String?
+  eventCategory String?   // Category such as wedding, corporate, etc.
+  venueName     String?   // Event venue name
+  address       String?   // Venue address
+  location      String?   // Optional shorthand location or city
+  coverUrl      String?   // Event cover image url
+  themeAccent   String?   // Personalization/theme accent color or label
+  rsvpDeadline  DateTime? // RSVP deadline to close guest responses
+  startDate     DateTime
+  endDate       DateTime
+  eventCode     String    @unique // Short readable code for guests to join manually
+  status        String    @default("DRAFT")
+  maxGuests     Int       @default(0)
+  publishedAt   DateTime?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  hostId String
-  host   User   @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  hostId      String
+  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
-  guests        Guest[]
-  invitations   Invitation[]
-  qrCodes       QRCode[]
-  checkIns      CheckIn[]
-  media         Media[]
-  memories      Memory[]
+  guests      Guest[]  // An event can have many invited guests
+  media       Media[]  // An event has a shared collaborative timeline
+  invitations Invitation[]
+  qrCodes     QRCode[]
+  checkIns    CheckIn[]
+  memories    Memory[]
   notifications Notification[]
 
   @@index([hostId])
-  @@index([date])
-  @@index([deletedAt])
+  @@index([startDate])
+  @@index([updatedAt])
 }
 
 // ─────────────────────────────────────────

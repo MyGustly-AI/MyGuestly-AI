@@ -2,9 +2,11 @@
   "name": "myguestly-ai-backend",
   "version": "1.0.0",
   "type": "module",
-  "main": "src/app.js",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -19,6 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
     "bullmq": "^5.77.6",
     "cloudinary": "^2.10.0",
     "compression": "^1.8.1",
@@ -27,23 +30,24 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.2.0",
-    "ioredis": "^5.11.0",
+    "joi": "^18.2.1",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
+    "nodemailer": "^6.9.4",
     "qrcode": "^1.5.4",
     "redis": "^5.12.1",
     "socket.io": "^4.8.3",
-    "zod": "^4.4.3"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@prisma/client": "^7.8.0",
     "eslint": "^10.4.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
+    "jest": "^30.4.2",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
-    "prisma": "^6.19.3"
+    "prisma": "^7.8.0",
+    "supertest": "^7.2.2"
   },
   "description": "Welcome to the **MyGuestly AI** backend service. This REST API handles event management, secure guest authentication, QR code verification, and real-time gate access control with built-in anti-fraud mechanisms.",
   "directories": {
