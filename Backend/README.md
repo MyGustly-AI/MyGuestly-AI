@@ -73,8 +73,7 @@ Backend/
 │   ├── services/              # Utility functions & helpers
 │   ├── utils/                 # Shared utilities (Prisma client, validators)
 │   └── generated/prisma/      # Auto-generated Prisma types
-├── .env.example               # Environment variables template
-├── .env                       # Local environment configuration (not committed)
+├── .env.example               # Environment variables template (do NOT commit secrets)
 ├── Dockerfile                 # Container image instructions
 ├── docker-compose.yml         # Multi-container orchestration
 ├── nodemon.json               # Development auto-reload config
@@ -109,6 +108,18 @@ Edit `.env` and configure:
 - `EMAIL_*` — SMTP configuration for notifications
 
 **Note:** Database URL is automatically configured in Docker Compose.
+
+### Security — Do NOT commit secrets
+
+- Never commit `.env` or other files containing secrets into source control.
+- If you accidentally committed a secrets file, remove it from git with:
+
+```bash
+git rm --cached Backend/.env
+git commit -m "remove committed env"
+```
+
+Then rotate any exposed credentials (JWT secrets, DB passwords, API keys).
 
 ### 3. Install Dependencies (Optional - for local development)
 
@@ -349,11 +360,11 @@ For issues, questions, or feature requests:
 
 ### Critical Rules
 
-1. **NEVER push directly to `main`** 
+1. **NEVER push directly to `main`**
    - `main` is a protected branch for production-ready code only
    - All changes must go through a Pull Request
 
-2. **Always create a feature branch** 
+2. **Always create a feature branch**
 
    ```bash
    git checkout -b feature/your-feature-name

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres-db:
@@ -6,9 +6,9 @@ services:
     container_name: myguestly_postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: supersecurepassword
-      POSTGRES_DB: myguestly_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-myguestly_db}
     ports:
       - "5432:5432"
     volumes:
@@ -22,8 +22,8 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - DATABASE_URL=postgresql://postgres:supersecurepassword@postgres-db:5432/myguestly_db?schema=public
-      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - NODE_ENV=${NODE_ENV:-development}
     depends_on:
       - postgres-db
 

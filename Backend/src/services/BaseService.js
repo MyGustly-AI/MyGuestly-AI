@@ -36,7 +36,12 @@ export class BaseService {
   /**
    * Find all with pagination
    */
-  async findAll(where = {}, skip = 0, take = 10, orderBy = { createdAt: "desc" }) {
+  async findAll(
+    where = {},
+    skip = 0,
+    take = 10,
+    orderBy = { createdAt: "desc" },
+  ) {
     try {
       const [records, total] = await Promise.all([
         this.model.findMany({

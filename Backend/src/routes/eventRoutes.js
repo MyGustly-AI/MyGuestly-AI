@@ -6,7 +6,7 @@
 import express from "express";
 import eventController from "../controllers/EventController.js";
 import guestRoutes from "./guestRoutes.js";
-import { authMiddleware, authorize } from "../middlewares/authMiddleware.js";
+import { authMiddleware, authorize } from "../middlewares/auth.js";
 import { validateRequest, validateQuery } from "../utils/validationSchemas.js";
 import { eventSchemas } from "../utils/validationSchemas.js";
 
