@@ -18,7 +18,7 @@ class GuestController extends BaseController {
   inviteGuest = this.asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     const hostId = req.user.id;
-    const { name, email, phone } = req.body;
+    const { name, fullName, email, phone } = req.body;
 
     const event = await this.eventService.findById(eventId);
     if (event.hostId !== hostId) {
@@ -29,7 +29,7 @@ class GuestController extends BaseController {
     }
 
     const guest = await this.guestService.inviteGuest(eventId, {
-      name,
+      fullName: fullName || name,
       email,
       phone,
     });
@@ -78,12 +78,19 @@ class GuestController extends BaseController {
       );
     }
 
-    const result = await this.guestService.bulkInviteGuests(eventId, guests);
+    // Ensure bulk payloads map `name` -> `fullName` for DB compatibility
+    const normalized = guests.map((g) => ({
+      fullName: g.fullName || g.name,
+      email: g.email,
+      phone: g.phone,
+    }));
+
+    const result = await this.guestService.bulkInviteGuests(eventId, normalized);
     // Try sending emails for guests that have an email address
     try {
       const invites = guests
         .filter((g) => g.email)
-        .map((g) => ({ name: g.name, email: g.email }));
+        .map((g) => ({ name: g.name || g.fullName, email: g.email }));
       for (const g of invites) {
         // Create a lightweight guest record to generate link
         // Note: bulkInvite created records already, but we don't have their ids/qr tokens here.
