@@ -23,7 +23,12 @@ export const authMiddleware = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, env.JWT_SECRET);
-    req.user = decoded;
+    // Normalize token payload to `req.user.id` to match controller expectations.
+    req.user = {
+      id: decoded.userId || decoded.id,
+      role: decoded.role,
+      ...decoded,
+    };
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {
@@ -61,7 +66,11 @@ export const optionalAuth = (req, res, next) => {
       const token = authHeader.substring(7);
       if (!env.JWT_SECRET) return next();
       const decoded = jwt.verify(token, env.JWT_SECRET);
-      req.user = decoded;
+      req.user = {
+        id: decoded.userId || decoded.id,
+        role: decoded.role,
+        ...decoded,
+      };
     }
 
     next();

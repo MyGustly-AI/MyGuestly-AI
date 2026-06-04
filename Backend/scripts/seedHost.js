@@ -40,14 +40,14 @@ async function seed() {
         fullName: NAME,
         password: hashed,
         role: "HOST",
-        isVerified: true,
+        
       },
       create: {
         fullName: NAME,
         email: EMAIL,
         password: hashed,
         role: "HOST",
-        isVerified: true,
+        
       },
     });
 

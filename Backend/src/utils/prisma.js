@@ -5,34 +5,53 @@
 
 import pkg from "@prisma/client";
 import env from "../config/env.js";
+import fs from "node:fs";
+import path from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
 const { PrismaClient } = pkg;
 
 const globalForPrisma = globalThis;
 
-const resolveAdapterProvider = (databaseUrl) => {
-  if (!databaseUrl) return undefined;
-  if (databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("postgres://")) {
-    // Prisma's generated client uses activeProvider "postgresql" but the
-    // runtime expects adapter.provider to be the normalized name "postgres".
-    return "postgres";
+// Diagnostic: try to detect what the generated client expects
+try {
+  const generatedPath = path.join(
+    process.cwd(),
+    "node_modules",
+    "@prisma",
+    "client",
+    ".prisma",
+    "client",
+    "internal",
+    "class.ts",
+  );
+  if (fs.existsSync(generatedPath)) {
+    const cls = fs.readFileSync(generatedPath, "utf8");
+    const m = cls.match(/"activeProvider":\s*"([a-zA-Z0-9_-]+)"/);
+    if (m) {
+      console.info("Prisma generated client activeProvider:", m[1]);
+    }
   }
-  if (databaseUrl.startsWith("mysql://") || databaseUrl.startsWith("mysql2://")) {
-    return "mysql";
-  }
-  // Fallback to postgres for unknown/unspecified DBs to avoid init errors in dev
-  return "postgres";
-};
+} catch (e) {
+  // ignore diagnostics failures
+}
 
-const adapterProvider = resolveAdapterProvider(env.DATABASE_URL);
+console.info(
+  "Prisma DATABASE_URL:",
+  env.DATABASE_URL ? env.DATABASE_URL.split("?")[0] : env.DATABASE_URL,
+);
+
+const pool = new pg.Pool({
+  connectionString: env.DATABASE_URL,
+});
+
+const adapter = new PrismaPg(pool);
 
 const prismaClient =
   globalForPrisma.prismaClient ??
   new PrismaClient({
-    adapter: {
-      provider: adapterProvider,
-      url: env.DATABASE_URL,
-    },
+    adapter,
     log:
       env.NODE_ENV === "development"
         ? ["query", "info", "warn", "error"]
