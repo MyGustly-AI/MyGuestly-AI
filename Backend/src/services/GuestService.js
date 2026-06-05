@@ -9,12 +9,28 @@ export class GuestService extends BaseService {
 
   async inviteGuest(eventId, guestData) {
     try {
+      // Check for existing guest by email or phone for this event
+      const where = {
+        eventId,
+        OR: [],
+      };
+      if (guestData.email) where.OR.push({ email: guestData.email });
+      if (guestData.phone) where.OR.push({ phone: guestData.phone });
+
+      if (where.OR.length > 0) {
+        const existing = await this.model.findFirst({ where });
+        if (existing) {
+          // Return existing guest instead of attempting a duplicate create
+          return { ...existing, _existing: true };
+        }
+      }
+
       const guest = await this.create({
         ...guestData,
         eventId,
       });
 
-      return guest;
+      return { ...guest, _existing: false };
     } catch (error) {
       throw this.handleError(error);
     }
@@ -32,6 +48,27 @@ export class GuestService extends BaseService {
         invited: result.count,
         requested: payload.length,
       };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getOrCreateInvitation(eventId, guestId) {
+    try {
+      const existing = await this.prisma.invitation.findFirst({
+        where: { guestId, eventId },
+      });
+
+      if (existing) return existing;
+
+      const created = await this.prisma.invitation.create({
+        data: {
+          guestId,
+          eventId,
+        },
+      });
+
+      return created;
     } catch (error) {
       throw this.handleError(error);
     }

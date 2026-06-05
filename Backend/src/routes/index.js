@@ -5,6 +5,7 @@
 
 import express from "express";
 import eventRoutes from "./eventRoutes.js";
+import verifyController from "../controllers/VerifyController.js";
 
 const router = express.Router();
 
@@ -15,6 +16,9 @@ const router = express.Router();
 
 // Event routes
 router.use("/events", eventRoutes);
+
+// Gate verification endpoint (scanning QR at gate)
+router.post("/verify-gate/:token", verifyController.verifyGate);
 
 // More routes will be added here:
 // router.use("/guests", guestRoutes);
