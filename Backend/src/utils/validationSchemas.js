@@ -199,7 +199,11 @@ export const validateQuery = (schema) => {
       });
     }
 
-    req.query = value;
+    // Avoid assigning to `req.query` directly because some request
+    // implementations expose it as a getter-only property. Store the
+    // validated values on `req.validatedQuery` and keep original
+    // `req.query` intact for compatibility.
+    req.validatedQuery = value;
     next();
   };
 };

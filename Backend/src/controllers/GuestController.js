@@ -4,6 +4,7 @@ import { EventService } from "../services/EventService.js";
 import { AppError } from "../utils/AppError.js";
 import { prisma } from "../utils/prisma.js";
 import EmailService from "../utils/emailService.js";
+import QRCode from "qrcode";
 import env from "../config/env.js";
 
 const BASE_URL = env.APP_URL;
@@ -18,7 +19,7 @@ class GuestController extends BaseController {
   inviteGuest = this.asyncHandler(async (req, res) => {
     const { eventId } = req.params;
     const hostId = req.user.id;
-    const { name, email, phone } = req.body;
+    const { name, fullName, email, phone } = req.body;
 
     const event = await this.eventService.findById(eventId);
     if (event.hostId !== hostId) {
@@ -28,11 +29,30 @@ class GuestController extends BaseController {
       );
     }
 
-    const guest = await this.guestService.inviteGuest(eventId, {
-      name,
+    const guestResult = await this.guestService.inviteGuest(eventId, {
+      fullName: fullName || name,
       email,
       phone,
     });
+
+    // guestResult may include an _existing flag when a duplicate was detected
+    const guest = (({ _existing, ...rest }) => rest)(guestResult);
+    const wasExisting = !!guestResult._existing;
+
+    // Ensure there is an Invitation DB row and get its token
+    let invitationRecord;
+    try {
+      invitationRecord = await this.guestService.getOrCreateInvitation(
+        event.id,
+        guest.id,
+      );
+    } catch (err) {
+      console.error(
+        "Failed to create/find invitation record:",
+        err?.message || err,
+      );
+      return this.internalError(res, "Failed to create invitation record");
+    }
 
     const invitation = {
       guestId: guest.id,
@@ -42,26 +62,46 @@ class GuestController extends BaseController {
       eventStartDate: event.startDate,
       eventEndDate: event.endDate,
       location: event.location,
-      qrToken: guest.qrToken,
-      invitationLink: `${BASE_URL}/rsvp/${event.eventCode}/${guest.qrToken}`,
+      token: invitationRecord.token,
+      invitationLink: `${BASE_URL}/rsvp/${event.eventCode}/${invitationRecord.token}`,
       rsvpStatus: guest.rsvpStatus,
     };
 
-    // Send invitation email (if email present)
+    // Generate QR image for the invitation token (data URL -> base64)
+    let qrBase64 = null;
     try {
-      await EmailService.sendInvitation({
+      const qrDataUrl = await QRCode.toDataURL(invitation.token, {
+        errorCorrectionLevel: "H",
+        width: 300,
+      });
+      qrBase64 = qrDataUrl.split(",")[1];
+    } catch (err) {
+      console.error("Failed to generate QR code image:", err?.message || err);
+    }
+
+    // Send invitation email (if email present) and capture result for debugging
+    let mailResult = null;
+    let mailError = null;
+    try {
+      mailResult = await EmailService.sendInvitation({
         guest,
         event,
         invitationLink: invitation.invitationLink,
+        qrImageBase64: qrBase64,
       });
     } catch (err) {
+      mailError = err?.message || String(err);
       // Log and continue — email failures shouldn't block creation
-      console.error("Invitation email failed:", err?.message || err);
+      console.error("Invitation email failed:", mailError);
     }
 
     this.created(res, "Guest invited successfully", {
       guest,
       invitation,
+      existing: wasExisting,
+      mail: mailResult
+        ? { messageId: mailResult.messageId, previewUrl: mailResult.previewUrl }
+        : { error: mailError },
     });
   });
 
@@ -78,12 +118,22 @@ class GuestController extends BaseController {
       );
     }
 
-    const result = await this.guestService.bulkInviteGuests(eventId, guests);
+    // Ensure bulk payloads map `name` -> `fullName` for DB compatibility
+    const normalized = guests.map((g) => ({
+      fullName: g.fullName || g.name,
+      email: g.email,
+      phone: g.phone,
+    }));
+
+    const result = await this.guestService.bulkInviteGuests(
+      eventId,
+      normalized,
+    );
     // Try sending emails for guests that have an email address
     try {
       const invites = guests
         .filter((g) => g.email)
-        .map((g) => ({ name: g.name, email: g.email }));
+        .map((g) => ({ name: g.name || g.fullName, email: g.email }));
       for (const g of invites) {
         // Create a lightweight guest record to generate link
         // Note: bulkInvite created records already, but we don't have their ids/qr tokens here.

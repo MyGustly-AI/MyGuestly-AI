@@ -3,12 +3,10 @@ import express from "express";
 
 import corsMiddleware from "./config/cors.js";
 import routes from "./routes/index.js";
-import {
-  requestLogger,
-  createRateLimiter,
-  notFoundHandler,
-  errorHandler,
-} from "./middlewares/authMiddleware.js";
+import { requestLogger } from "./middlewares/requestLogger.js";
+import { createRateLimiter } from "./middlewares/rateLimiter.js";
+import { notFoundHandler } from "./middlewares/notFoundHandler.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 

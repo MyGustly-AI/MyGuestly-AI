@@ -73,8 +73,7 @@ Backend/
 │   ├── services/              # Utility functions & helpers
 │   ├── utils/                 # Shared utilities (Prisma client, validators)
 │   └── generated/prisma/      # Auto-generated Prisma types
-├── .env.example               # Environment variables template
-├── .env                       # Local environment configuration (not committed)
+├── .env.example               # Environment variables template (do NOT commit secrets)
 ├── Dockerfile                 # Container image instructions
 ├── docker-compose.yml         # Multi-container orchestration
 ├── nodemon.json               # Development auto-reload config
@@ -109,6 +108,18 @@ Edit `.env` and configure:
 - `EMAIL_*` — SMTP configuration for notifications
 
 **Note:** Database URL is automatically configured in Docker Compose.
+
+### Security — Do NOT commit secrets
+
+- Never commit `.env` or other files containing secrets into source control.
+- If you accidentally committed a secrets file, remove it from git with:
+
+```bash
+git rm --cached Backend/.env
+git commit -m "remove committed env"
+```
+
+Then rotate any exposed credentials (JWT secrets, DB passwords, API keys).
 
 ### 3. Install Dependencies (Optional - for local development)
 
@@ -245,51 +256,54 @@ Our system implements multiple layers of security for gate verification:
 
 ---
 
-<!-- ## API Overview
+## API Testing (quick reference)
 
-### Authentication Endpoints
+Use `Authorization: Bearer <ACCESS_TOKEN>` for protected endpoints. Replace `:eventId`, `:guestId`, and `:token` as applicable.
 
-```
-POST   /auth/register          # Create new user account
-POST   /auth/login             # User login
-POST   /auth/refresh-token     # Refresh expired JWT
-```
+- Create event
+  - POST /api/v1/events
+  - Body (JSON):
+    {
+    "title":"My Event",
+    "description":"Optional",
+    "eventCategory":"Meetup",
+    "venueName":"Venue",
+    "address":"123 Main St",
+    "startDate":"2026-06-15T14:00:00.000Z",
+    "endDate":"2026-06-15T18:00:00.000Z",
+    "maxGuests":150
+    }
 
-### Event Management
+- Publish / Start / End (lifecycle)
+  - POST /api/v1/events/:eventId/publish
+  - POST /api/v1/events/:eventId/start
+  - POST /api/v1/events/:eventId/end
+  - No body required. Must be performed in order: publish → start → end.
 
-```
-POST   /events                 # Create new event
-GET    /events                 # List user's events
-GET    /events/:id             # Get event details
-PUT    /events/:id             # Update event
-DELETE /events/:id             # Delete event
-```
+- Invite a guest
+  - POST /api/v1/events/:eventId/guests
+  - Body (JSON): { "name":"Guest Name", "email":"guest@example.com", "phone":"09123456789" }
+  - Response includes `invitation.token` and `invitation.invitationLink`; mail send status is in `data.mail`.
 
-### Guest Management
+- Bulk invite
+  - POST /api/v1/events/:eventId/guests/bulk-invite
+  - Body (JSON): { "guests": [{ "name":"A","email":"a@x","phone":"" }, ...] }
 
-```
-POST   /events/:id/guests      # Invite guest to event
-GET    /events/:id/guests      # List event guests
-PUT    /guests/:id             # Update guest RSVP
-DELETE /guests/:id             # Remove guest
-```
+- List events (host)
+  - GET /api/v1/events
 
-### Gate Verification
+- Get event
+  - GET /api/v1/events/:eventId
 
-```
-POST   /verify-gate/:token     # Verify QR code & check in guest
-GET    /events/:id/check-ins   # View check-in summary
-```
+- Verify gate (scanner)
+  - POST /api/v1/verify-gate/:token
+  - Body (JSON): { "totp": "123456" }
+  - First successful call checks the guest in. Subsequent calls return 400 and flag duplicate scans.
 
-### Media Upload
+Notes
 
-```
-POST   /events/:id/media       # Upload photo/video
-GET    /events/:id/media       # List event media
-DELETE /media/:id              # Delete media
-``` -->
-
----
+- Invitation emails include an attached `ticket.pdf` (ticket contains QR). For anti-screenshot protection the guest app should compute a rotating TOTP every 30s from the invitation token and present that dynamic QR at the gate. The scanner extracts the TOTP and calls the verify endpoint.
+- If email delivery is failing, check `EMAIL_*` env vars and `data.mail` in the invite response for `messageId` or `error` details.
 
 ## Troubleshooting
 
@@ -349,11 +363,11 @@ For issues, questions, or feature requests:
 
 ### Critical Rules
 
-1. **NEVER push directly to `main`** 
+1. **NEVER push directly to `main`**
    - `main` is a protected branch for production-ready code only
    - All changes must go through a Pull Request
 
-2. **Always create a feature branch** 
+2. **Always create a feature branch**
 
    ```bash
    git checkout -b feature/your-feature-name

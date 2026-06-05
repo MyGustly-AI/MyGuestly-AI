@@ -1,6 +1,6 @@
 import express from "express";
 import guestController from "../controllers/GuestController.js";
-import { authMiddleware, authorize } from "../middlewares/authMiddleware.js";
+import { authMiddleware, authorize } from "../middlewares/auth.js";
 import {
   validateRequest,
   validateQuery,

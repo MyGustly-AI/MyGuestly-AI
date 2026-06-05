@@ -44,7 +44,7 @@ export class BaseController {
     page = 1,
     limit = 10,
     total = 0,
-    message = "Data retrieved successfully"
+    message = "Data retrieved successfully",
   ) {
     return ApiResponse.paginated(res, data, page, limit, total, message);
   }
@@ -118,8 +118,9 @@ export class BaseController {
    * Get pagination parameters from request
    */
   getPaginationParams(req) {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const source = req.validatedQuery || req.query || {};
+    const page = parseInt(source.page) || 1;
+    const limit = parseInt(source.limit) || 10;
     const skip = (page - 1) * limit;
 
     return { page, limit, skip };
