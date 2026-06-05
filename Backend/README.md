@@ -399,39 +399,70 @@ git checkout -b feature/your-feature
 git add .
 git commit -m "feat: add new feature"
 
-# 4. Push to your branch (NOT main)
-git push origin feature/your-feature
+---
 
-# 5. Open a Pull Request on GitHub
-# - Wait for reviews
-# - Address feedback
-# - Don't merge until approved
-```
+## Sprint 1-2 — Completed Work (summary)
 
-### Commit Message Format
+The backend has implemented the core features required through the first two sprints. Key completed items:
 
-Use conventional commits for clarity:
+- Event CRUD + lifecycle: create, update (draft), publish, start, end, delete.
+- New event fields added to match the UI: `eventCategory`, `venueName`, `address`, `coverUrl`, `themeAccent`, `rsvpDeadline`.
+- Tightened validation and cross-field checks (rsvpDeadline < startDate, endDate > startDate, `eventCategory` enum, `themeAccent` formats).
+- Invitations persisted in DB (`Invitation` model) and audited with `sentAt` and `sentBy`.
+- Guest invite flow: create/merge guests, create invitations, generate QR tokens, enqueue email sends.
+- QR & ticket generation: generate QR PNG, embed QR into `ticket.pdf` (via `pdfkit`) and attach to emails.
+- Email pipeline: Resend integration plus BullMQ queue producer and a background worker; worker calls Resend and falls back to Nodemailer/Ethereal in dev.
+- TOTP verification and atomic check-in: VerifyController implements TOTP verification with atomic DB update to prevent duplicate check-ins.
+- Capacity enforcement: `GuestService.updateRsvp` enforces `maxGuests` and rejects CONFIRMED when capacity reached; `EventService.checkCapacity` provides capacity info.
+- Seeder script for host auth hardened and gated by `ALLOW_DEV_SEED`.
+- Various bug fixes: QR/PDF generation awaiting, invitation audit updates, resilience around BullMQ import shapes, and safer queue worker behavior.
 
-- `feat:` — New feature
-- `fix:` — Bug fix
-- `docs:` — Documentation updates
-- `refactor:` — Code restructuring
-- `test:` — Test additions/updates
-- `chore:` — Build, dependencies, tooling
+These changes are implemented across the repository in the `src/` folder (services, controllers, utils, and routes).
 
-Example: `git commit -m "feat: add QR code validation endpoint"`
+---
+
+## API Endpoints (consolidated)
+Use `Authorization: Bearer <ACCESS_TOKEN>` for protected endpoints. Replace `:eventId`, `:guestId`, and `:token` as applicable.
+
+- Event management
+  - POST `/api/v1/events` — create event
+  - GET `/api/v1/events` — list host events (paginated)
+  - GET `/api/v1/events/:eventId` — get event details + RSVP stats
+  - PUT `/api/v1/events/:eventId` — update draft event
+  - POST `/api/v1/events/:eventId/publish` — publish event (DRAFT → ACTIVE)
+  - POST `/api/v1/events/:eventId/start` — mark event as ONGOING
+  - POST `/api/v1/events/:eventId/end` — mark event as COMPLETED
+  - DELETE `/api/v1/events/:eventId` — delete draft/completed event
+  - GET `/api/v1/events/:eventId/capacity` — capacity info (`maxGuests`, `availableSpots`)
+  - GET `/api/v1/events/:eventId/dashboard` — event dashboard (stats, capacity, check-ins, media)
+
+- Guest & Invitation flows
+  - POST `/api/v1/events/:eventId/guests` — invite a guest (creates guest + invitation, enqueues email)
+  - POST `/api/v1/events/:eventId/guests/bulk-invite` — bulk invite (enqueue emails)
+  - GET `/api/v1/events/:eventId/guests` — list guests (filter by RSVP status)
+  - PUT / POST `/api/v1/events/:eventId/guests/:guestId/rsvp` — update RSVP (PENDING/CONFIRMED/DECLINED)
+
+- Verification & check-in
+  - POST `/api/v1/verify-gate/:token` — gate scanner: submits TOTP and token; performs atomic check-in and returns result
+
+- Email & background processing (internal)
+  - Background worker listens to the `email` queue (BullMQ) and processes `invitation` jobs by calling Resend or Nodemailer fallback.
+  - `src/utils/emailQueue.js` and `src/utils/emailWorker.js` manage queueing and processing.
+
+---
+
 
 ### Pull Request Checklist
 
 Before submitting a PR:
 
--  Branch created from latest `main`
--  Code follows project style guidelines
--  Tests added/updated for changes
--  Documentation updated
--  Commit messages are clear and descriptive
--  No merge conflicts with `main`
--  No sensitive data committed (check `.gitignore`)
+- Branch created from latest `main`
+- Code follows project style guidelines
+- Tests added/updated for changes
+- Documentation updated
+- Commit messages are clear and descriptive
+- No merge conflicts with `main`
+- No sensitive data committed (check `.gitignore`)
 
 ---
 
