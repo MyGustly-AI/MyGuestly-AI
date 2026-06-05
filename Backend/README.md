@@ -425,13 +425,13 @@ Example: `git commit -m "feat: add QR code validation endpoint"`
 
 Before submitting a PR:
 
-- ✅ Branch created from latest `main`
-- ✅ Code follows project style guidelines
-- ✅ Tests added/updated for changes
-- ✅ Documentation updated
-- ✅ Commit messages are clear and descriptive
-- ✅ No merge conflicts with `main`
-- ✅ No sensitive data committed (check `.gitignore`)
+-  Branch created from latest `main`
+-  Code follows project style guidelines
+-  Tests added/updated for changes
+-  Documentation updated
+-  Commit messages are clear and descriptive
+-  No merge conflicts with `main`
+-  No sensitive data committed (check `.gitignore`)
 
 ---
 

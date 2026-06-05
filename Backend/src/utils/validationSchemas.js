@@ -29,22 +29,61 @@ export const eventSchemas = {
   create: Joi.object({
     title: Joi.string().min(3).max(200).required(),
     description: Joi.string().max(1000).optional(),
-    eventCategory: Joi.string().max(100).required(),
+    eventCategory: Joi.string()
+      .valid("Wedding", "Gala", "Birthday", "Corporate", "Church")
+      .required(),
     venueName: Joi.string().min(3).max(200).required(),
     address: Joi.string().min(5).max(300).required(),
     coverUrl: Joi.string().uri().optional(),
-    themeAccent: Joi.string().max(50).optional(),
+    themeAccent: Joi.alternatives()
+      .try(
+        Joi.string().pattern(/^#?([0-9A-F]{3}|[0-9A-F]{6})$/i),
+        Joi.string().valid(
+          "#FF6B6B",
+          "#6B5BFF",
+          "#FFD166",
+          "#06D6A0",
+          "#FF9AA2",
+          "Purple",
+          "Navy",
+          "Teal",
+          "Maroon",
+        ),
+      )
+      .optional(),
     rsvpDeadline: Joi.date().iso().optional(),
     startDate: Joi.date().iso().required(),
     endDate: Joi.date().iso().required(),
     location: Joi.string().min(3).max(200).optional(),
     maxGuests: Joi.number().integer().min(1).max(10000).required(),
+  }).custom((value, helpers) => {
+    // ensure rsvpDeadline (if provided) is before startDate
+    if (value.rsvpDeadline && value.startDate) {
+      const rsvp = new Date(value.rsvpDeadline);
+      const start = new Date(value.startDate);
+      if (rsvp >= start) {
+        return helpers.message('"rsvpDeadline" must be before "startDate"');
+      }
+    }
+
+    // ensure endDate is after startDate
+    if (value.endDate && value.startDate) {
+      const end = new Date(value.endDate);
+      const start = new Date(value.startDate);
+      if (end <= start) {
+        return helpers.message('"endDate" must be after "startDate"');
+      }
+    }
+
+    return value;
   }),
 
   update: Joi.object({
     title: Joi.string().min(3).max(200).optional(),
     description: Joi.string().max(1000).optional(),
-    eventCategory: Joi.string().max(100).optional(),
+    eventCategory: Joi.string()
+      .valid("Wedding", "Gala", "Birthday", "Corporate", "Church")
+      .optional(),
     venueName: Joi.string().min(3).max(200).optional(),
     address: Joi.string().min(5).max(300).optional(),
     coverUrl: Joi.string().uri().optional(),
@@ -54,6 +93,25 @@ export const eventSchemas = {
     endDate: Joi.date().iso().optional(),
     location: Joi.string().min(3).max(200).optional(),
     maxGuests: Joi.number().integer().min(1).max(10000).optional(),
+  }).custom((value, helpers) => {
+    // For updates, only validate when the related fields are present
+    if (value.rsvpDeadline && value.startDate) {
+      const rsvp = new Date(value.rsvpDeadline);
+      const start = new Date(value.startDate);
+      if (rsvp >= start) {
+        return helpers.message('"rsvpDeadline" must be before "startDate"');
+      }
+    }
+
+    if (value.endDate && value.startDate) {
+      const end = new Date(value.endDate);
+      const start = new Date(value.startDate);
+      if (end <= start) {
+        return helpers.message('"endDate" must be after "startDate"');
+      }
+    }
+
+    return value;
   }),
 
   list: Joi.object({

@@ -27,6 +27,9 @@ const env = {
     : null,
   EMAIL_SERVICE_USER: process.env.EMAIL_SERVICE_USER || null,
   EMAIL_SERVICE_PASS: process.env.EMAIL_SERVICE_PASS || null,
+  EMAIL_FROM: process.env.EMAIL_FROM || null,
+  RESEND_API_KEY: process.env.RESEND_API_KEY || null,
+  REDIS_URL: process.env.REDIS_URL || "redis://127.0.0.1:6379",
 };
 
 export default env;

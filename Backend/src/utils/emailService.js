@@ -8,8 +8,6 @@ class EmailService {
   }
 
   async initTransport() {
-    // If SMTP config provided, use it. Otherwise in non-production create
-    // an Ethereal test account for development so emails can be previewed.
     if (env.EMAIL_HOST && env.EMAIL_SERVICE_USER && env.EMAIL_SERVICE_PASS) {
       this.transporter = nodemailer.createTransport({
         host: env.EMAIL_HOST,
@@ -30,7 +28,7 @@ class EmailService {
         return;
       }
 
-      // Create Ethereal account for local dev/testing
+      // automaticallycreate Ethereal account for local dev/testing
       const testAccount = await nodemailer.createTestAccount();
       this.transporter = nodemailer.createTransport({
         host: "smtp.ethereal.email",
@@ -53,14 +51,26 @@ class EmailService {
         throw new Error("Email transporter not configured");
     }
 
-    // Ensure from is set and preserve any passed attachments or headers
     const finalOptions = {
-      from: mailOptions.from || env.EMAIL_SERVICE_USER || "no-reply@myguestly.local",
+      from:
+        mailOptions.from ||
+        env.EMAIL_SERVICE_USER ||
+        "no-reply@myguestly.local",
       ...mailOptions,
     };
 
-    const info = await this.transporter.sendMail(finalOptions);
+    try {
+      console.log("Sending to:", finalOptions.to);
 
+      const info = await this.transporter.sendMail(finalOptions);
+
+      console.log("Mail info:", info);
+
+      return info;
+    } catch (error) {
+      console.error("Mail send failed:", error);
+      throw error;
+    }
     // If using Ethereal in dev, attach preview URL to the returned info
     if (this.isEthereal) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
