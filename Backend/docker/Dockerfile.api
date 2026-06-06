@@ -1,34 +1,41 @@
-# Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+# =========================
+# Base image
+# =========================
+FROM node:20-alpine
 
 WORKDIR /app
+
+# Install system deps (needed for Prisma + pg)
+RUN apk add --no-cache bash openssl libc6-compat
+
+# =========================
+# Install dependencies
+# =========================
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# Stage 2: Production image
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-
-# Create non-root user before referencing it
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
+# =========================
 # Copy application source
+# =========================
 COPY prisma ./prisma
 COPY src ./src
-COPY package*.json ./
+COPY prisma.config.ts ./
 
-# Generate Prisma client inside the container
+# =========================
+# Prisma generate (SAFE here because node_modules exists)
+# =========================
 RUN npx prisma generate
 
-# Hand ownership to non-root user
+# =========================
+# Create non-root user
+# =========================
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN chown -R appuser:appgroup /app
 USER appuser
 
-EXPOSE 5000
+# =========================
+# Runtime
+# =========================
+EXPOSE 5003
 
-# Correct CMD array syntax — each argument is a separate string
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]

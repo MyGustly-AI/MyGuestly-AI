@@ -84,7 +84,7 @@ export const guestSchemas = {
           phone: Joi.string()
             .pattern(/^[0-9]{10,15}$/)
             .optional(),
-        }).or("email", "phone"),
+        }).or("email", "phone")
       )
       .min(1)
       .required(),

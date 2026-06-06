@@ -5,7 +5,7 @@ import { AppError } from "../utils/AppError.js";
 import { prisma } from "../utils/prisma.js";
 import EmailService from "../utils/emailService.js";
 import QRCode from "qrcode";
-import env from "../config/env.js";
+import {env} from "../config/env.js";
 
 const BASE_URL = env.APP_URL;
 
@@ -25,7 +25,7 @@ class GuestController extends BaseController {
     if (event.hostId !== hostId) {
       return this.forbidden(
         res,
-        "You can only invite guests to your own event",
+        "You can only invite guests to your own event"
       );
     }
 
@@ -114,7 +114,7 @@ class GuestController extends BaseController {
     if (event.hostId !== hostId) {
       return this.forbidden(
         res,
-        "You can only invite guests to your own event",
+        "You can only invite guests to your own event"
       );
     }
 
@@ -164,7 +164,7 @@ class GuestController extends BaseController {
     const updated = await this.guestService.updateRsvp(
       eventId,
       guestId,
-      status,
+      status
     );
     this.success(res, "RSVP status updated", updated);
   });
@@ -191,7 +191,7 @@ class GuestController extends BaseController {
       eventId,
       filter,
       skip,
-      validLimit,
+      validLimit
     );
     this.paginated(
       res,
@@ -199,7 +199,7 @@ class GuestController extends BaseController {
       validPage,
       validLimit,
       total,
-      "Guest list retrieved",
+      "Guest list retrieved"
     );
   });
 }
