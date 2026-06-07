@@ -1,19 +1,30 @@
 # MyGuestly AI — Backend Service
 
-Welcome to the **MyGuestly AI** backend service. This REST API handles event management, secure guest authentication, QR code verification, and real-time gate access control with built-in anti-fraud mechanisms.
+An **AI-powered event hosting and guest experience platform** backend built with Node.js + Express.
+
+This service provides:
+- Secure user authentication (access + refresh JWTs)
+- Email verification, forgot/reset password flows
+- Centralized security middleware (rate limiting, headers, validation)
+- Redis-backed session hardening (refresh token storage + access token blocklist)
+- Dockerized deployment (API + Postgres + Redis + NGINX + Prisma Studio)
 
 ---
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Setup Instructions](#setup-instructions)
-- [Running the Server](#running-the-server)
-- [Database Management](#database-management)
-- [Security Architecture](#security-architecture)
-- [API Overview](#api-overview)
+- [Project Overview](#project-overview)
+- [Architecture & Project Structure](#architecture--project-structure)
+- [Security & Request Lifecycle](#security--request-lifecycle)
+- [Configuration (Environment Variables)](#configuration-environment-variables)
+- [Auth Module (End-to-End)](#auth-module-end-to-end)
+  - [Token strategy](#token-strategy)
+  - [Routes & behaviors](#routes--behaviors)
+- [Email Service (Nodemailer)](#email-service-nodemailer)
+- [Validation & Error Handling](#validation--error-handling)
+- [Database (Prisma)](#database-prisma)
+- [Dockerization](#dockerization)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -22,45 +33,43 @@ Welcome to the **MyGuestly AI** backend service. This REST API handles event man
 
 ### Prerequisites
 
-- [Git](https://git-scm.com/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Node.js 18+](https://nodejs.org/) (optional, for local development)
+- Docker Desktop
 
-### Get Started in 3 Steps
+### Run with Docker Compose
 
 ```bash
-# 1. Clone and navigate to backend
-git clone https://github.com/Johnsonchuks/MyGuestly-AI.git
 cd MyGuestly-AI/Backend
-
-# 2. Set up environment variables
 cp .env.example .env
 
-# 3. Start the server with Docker
 docker-compose up --build
 ```
 
-Your API will be running on **http://localhost:5000**
+Then open:
+- API: **http://localhost:5003/api/v1/health** (health check)
+- Prisma Studio: **http://localhost:5555**
+- NGINX: **http://localhost:80**
+
+> Note: docker-compose port mapping in this repo exposes the API on `5003`.
 
 ---
 
-## Tech Stack
+## Project Overview
 
-| Component            | Technology              | Purpose                            |
-| -------------------- | ----------------------- | ---------------------------------- |
-| **Runtime**          | Node.js + ESM           | JavaScript runtime with ES modules |
-| **Framework**        | Express.js              | Lightweight REST API framework     |
-| **Database ORM**     | Prisma                  | Type-safe database access          |
-| **Database**         | PostgreSQL              | Primary relational database        |
-| **Containerization** | Docker & Docker-Compose | Isolated development environment   |
-| **Dev Tool**         | Nodemon                 | Auto-restart on file changes       |
-| **Security**         | JWT, TOTP               | Authentication & fraud prevention  |
+The backend is organized as a set of Express middlewares + route modules.
+
+At a high level:
+1. Requests enter the Express pipeline (`src/app.js`).
+2. Security middleware runs (helmet, CORS, request logging, rate limiting).
+3. Auth middleware protects private endpoints.
+4. Validation middleware ensures request body correctness.
+5. Route handlers call service functions.
+6. Errors are formatted consistently by the centralized error middleware.
 
 ---
 
-## Project Structure
+## Architecture & Project Structure
 
-```
+```bash
 Backend/
 ├── prisma/
 │   ├── schema.prisma          # Database models (User, Event, Guest, Media)
@@ -81,147 +90,249 @@ Backend/
 └── README.md                  # Documentation
 ```
 
----
+Key folders:
 
-## Setup Instructions
+- `src/middlewares/` — authentication, authorization, validation, logging, rate limiting, error/404 handling
+- `src/modules/` — feature modules (currently includes the full auth module and additional module stubs)
+- `src/services/` — service layer (e.g. `emailService`, business services)
+- `src/utils/` — shared utilities (token generation, password hashing, ApiResponse, AppError, etc.)
+- `src/config/` — configuration (env validation, redis, prisma)
+- `src/routes/` — Express route wiring (e.g. `index.js` mounts feature routes)
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/Johnsonchuks/MyGuestly-AI.git
-cd MyGuestly-AI/Backend
-```
-
-### 2. Configure Environment Variables
-
-Create a `.env` file from the template:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and configure:
-
-- `JWT_SECRET` — Secret key for token generation
-- `JWT_EXPIRES_IN` — Token expiration period (e.g., "3d")
-- `CLOUDINARY_*` — Media upload credentials
-- `EMAIL_*` — SMTP configuration for notifications
-
-**Note:** Database URL is automatically configured in Docker Compose.
-
-### Security — Do NOT commit secrets
-
-- Never commit `.env` or other files containing secrets into source control.
-- If you accidentally committed a secrets file, remove it from git with:
-
-```bash
-git rm --cached Backend/.env
-git commit -m "remove committed env"
-```
-
-Then rotate any exposed credentials (JWT secrets, DB passwords, API keys).
-
-### 3. Install Dependencies (Optional - for local development)
-
-```bash
-npm install
-```
+Core boot files:
+- `src/app.js` — middleware pipeline + health endpoint + route mounting
+- `src/server.js` — starts the HTTP server and implements graceful shutdown
 
 ---
 
-## Running the Server
+## Security & Request Lifecycle
 
-### Using Docker Compose (Recommended)
+### 1) Security Headers (Helmet)
+- Implemented in `src/app.js` via `helmet()`.
 
-```bash
-# Start both Node.js server and PostgreSQL database
-docker-compose up --build
+### 2) CORS
+- Implemented in `src/app.js` via `corsMiddleware` (`src/config/cors.js`).
 
-# Start without rebuilding
-docker-compose up
+### 3) Request Logging
+- Implemented in `src/app.js` via `requestLoggerMiddleware.js`.
 
-# Run in background (detached mode)
-docker-compose up -d
+### 4) Rate Limiting (Redis-backed)
+- Implemented in `src/middlewares/rateLimitMiddleware.js`.
+- General API limiter:
+  - `windowMs: 15m`
+  - `max: 100`
+  - uses `RedisStore` so limits are shared across containers.
+- Login-specific limiter:
+  - `windowMs: 15m`
+  - `max: 5`
+  - mitigates brute-force attempts on `/auth/login`.
 
-# Stop containers
-docker-compose down
+### 5) JWT Authentication + Redis Hardening
+- `src/middlewares/authenticateMiddleware.js`
+  - Expects header: `Authorization: Bearer <token>`
+  - Verifies JWT signature using `env.JWT_SECRET`
+  - Sets `req.user` with decoded JWT payload
+  - Checks Redis blocklist:
+    - key: `blocklist:${token}`
 
-# View logs
-docker-compose logs -f
-```
+### 6) Optional Auth
+- `src/middlewares/optionalAuthMiddleware.js`
+  - If token is present, it sets `req.user`; otherwise continues without failing.
 
-**Server Details:**
+### 7) Validation
+- `src/middlewares/validateMiddleware.js`
+  - Uses `schema.safeParse(req.body)`
+  - On failure returns `400` with `errors`.
 
-- **API URL:** http://localhost:5000
-- **Database Port:** 5432
-- **Auto-reload:** Enabled via Nodemon (changes in `src/` trigger restart)
-
-### Running Locally (Without Docker)
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Start production server
-npm start
-```
-
----
-
-## Database Management
-
-### Apply Schema Changes
-
-```bash
-# Apply pending migrations
-npx prisma migrate dev
-
-# Create new migration after schema changes
-npx prisma migrate dev --name <migration_name>
-
-# Push schema without creating migration
-npx prisma db push
-```
-
-### Inspect Database
-
-```bash
-# Open Prisma Studio (visual database explorer)
-npx prisma studio
-```
-
-This launches an interactive GUI at http://localhost:5555 where you can:
-
-- View all database records
-- Create, update, delete data
-- Monitor relationships
-
-### Database Models
-
-- **User** — Event hosts, photographers, admins
-- **Event** — Event details, venue, date, unique code
-- **Guest** — RSVP status, QR token, check-in status
-- **Media** — Photos/videos with upload metadata
+### 8) Centralized Error Handling
+- `src/middlewares/errorMiddleware.js` formats errors consistently.
+  - Handles:
+    - custom `AppError` (statusCode/message/errors)
+    - validation errors (400)
+    - JWT errors (401 invalid/expired token)
+    - Prisma errors (400 database operation failed)
 
 ---
 
-## Security Architecture
+## Configuration (Environment Variables)
 
-### Anti-Fraud Mechanisms
+Environment variables are validated on startup in `src/config/env.js` using Zod.
 
-Our system implements multiple layers of security for gate verification:
+At minimum, the service expects:
 
-#### 1. Time-Based One-Time Passwords (TOTP)
+### Core
+- `PORT` (default `5003`)
+- `NODE_ENV` (`development|production|test`)
+- `DATABASE_URL`
+- `REDIS_URL`
 
-- QR code data regenerates every **30 seconds**
-- ±1 step clock tolerance for network lag & phone drift
-- Prevents screenshot/replay attacks
+### JWT
+- `JWT_SECRET` (access token signing)
+- `JWT_REFRESH_SECRET` (refresh token signing)
+- `JWT_ACCESS_EXPIRES_IN` (default `15m`)
+- `JWT_REFRESH_EXPIRES_IN` (default `7d`)
+- `JWT_EMAIL_VERIFICATION_SECRET`
+- `JWT_PASSWORD_RESET_SECRET`
 
-#### 2. Atomic Single-Use Verification
+### CORS
+- `ALLOWED_ORIGINS` (default `http://localhost:3000`)
 
+### Email (SMTP)
+- `EMAIL_HOST`
+- `EMAIL_PORT` (default `587`)
+- `EMAIL_SERVICE_USER`
+- `EMAIL_SERVICE_PASS`
+
+### App URLs
+- `APP_CLIENT_URL` (frontend base; used in email links)
+- `APP_API_URL`
+
+### Cloudinary (declared in env schema)
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+---
+
+## Auth Module (End-to-End)
+
+Auth is split into:
+- **Routes**: `src/modules/auth/authRoutes.js`
+- **Controller**: `src/modules/auth/authController.js`
+- **Service**: `src/modules/auth/authService.js`
+- **Validation**: `src/modules/auth/authValidation.js`
+- **Token generation**: `src/utils/tokenUtils.js`
+
+### Token strategy
+
+The system issues:
+- **Access token**
+  - JWT signed with `env.JWT_SECRET`
+  - includes payload: `userId`, `role`, `email`
+  - expiry: `env.JWT_ACCESS_EXPIRES_IN` (default `15m`)
+
+- **Refresh token**
+  - JWT signed with `env.JWT_REFRESH_SECRET`
+  - expiry: `env.JWT_REFRESH_EXPIRES_IN` (default `7d`)
+  - additionally stored in Redis:
+    - key: `refresh:${userId}`
+    - TTL: 7 days
+
+- **Blocklist for access tokens** (hardening)
+  - old access tokens are added to:
+    - key: `blocklist:${accessToken}`
+    - TTL: remaining TTL of that access token
+  - checked in `authenticateMiddleware.js`
+
+### Routes & behaviors
+
+Base: `/api/v1/auth` (mounted under `/api/v1` in `src/routes/index.js`)
+
+#### Public routes
+
+1) `POST /auth/register`
+- Validated by `registerSchema` (Zod)
+- Creates user (soft-delete restore supported)
+- Sends email verification email
+- Returns:
+  - `accessToken`
+  - refresh token (also set by controller as httpOnly cookie after login only; register currently returns refreshToken in response from service)
+
+2) `POST /auth/login`
+- Validated by `loginSchema`
+- Rate-limited by `loginLimiter`
+- Returns:
+  - `accessToken`
+- Sets cookie:
+  - cookie name: `refreshToken`
+  - `httpOnly: true`
+  - `secure` only in production
+  - `sameSite: strict`
+  - `maxAge: 7d`
+
+3) `POST /auth/refresh`
+- Reads refresh token from cookies (`req.cookies?.refreshToken`)
+- Reads old access token from `Authorization` header
+- Verifies refresh token signature
+- Confirms refresh token matches Redis stored token
+- Rotates refresh token in Redis
+- If old access token is provided, it is blocklisted until expiry
+- Returns:
+  - new `accessToken`
+  - new `refreshToken`
+- Updates cookie `refreshToken`.
+
+4) `POST /auth/forgot-password`
+- Validated by `forgotPasswordSchema`
+- If user exists, sends reset email
+- Always returns success message to avoid user enumeration
+
+5) `POST /auth/reset-password`
+- Validated by `resetPasswordSchema`
+- Verifies token using `env.JWT_PASSWORD_RESET_SECRET`
+- Updates password hash
+- Clears refresh tokens in Redis for that user (`redis.del(refresh:${user.id})`)
+
+6) `GET /auth/verify-email?token=...`
+- Verifies verification token using `env.JWT_EMAIL_VERIFICATION_SECRET`
+- Marks `isVerified: true`
+
+#### Protected routes (use `authenticate` middleware)
+
+7) `GET /auth/me`
+- Returns current user profile
+- Rejects if account soft-deleted
+
+8) `POST /auth/logout`
+- Requires access token
+- Deletes refresh token in Redis
+- Blocklists the given access token until expiry
+- Clears cookie `refreshToken`
+
+9) `PATCH /auth/profile`
+- Validated by `updateProfileSchema`
+- Updates allowed fields via Prisma
+
+10) `PATCH /auth/password`
+- Validated by `changePasswordSchema`
+- Verifies `currentPassword`
+- Hashes and saves new password
+
+11) `DELETE /auth/account`
+- Soft-deletes user (sets `deletedAt`)
+- Clears cookie `refreshToken`
+- Sends deletion confirmation email (fire-and-forget)
+
+---
+
+## Email Service (Nodemailer)
+
+Implemented in `src/services/emailService.js` using Nodemailer.
+
+### Transport
+- Created with `nodemailer.createTransport({ host, port, secure, auth })`
+- Credentials come from `env.EMAIL_*`
+
+### Email templates & link behavior
+
+1) **Email verification**
+- Method: `sendVerificationEmail({ to, fullName, token })`
+- Link:
+  - `${env.APP_CLIENT_URL}/verify-email?token=${token}`
+- Token expires in **24 hours** (see `tokenUtils.generateEmailVerificationToken`)
+
+2) **Password reset**
+- Method: `sendPasswordResetEmail({ to, fullName, token })`
+- Link:
+  - `${env.APP_CLIENT_URL}/reset-password?token=${token}`
+- Token expires in **1 hour**
+
+3) **Account deletion confirmation**
+- Method: `sendAccountDeletedEmail({ to, fullName })`
+
+4) Invitation support
+- Method: `sendInvitation({ guest, event, invitationLink })`
+- Includes event title/date/location and `event.eventCode`
 - Once a guest checks in, their `checkedIn` flag is locked atomically
 - Duplicate token scans are rejected with `400 Bad Request`
 - Security violations are logged for audit trail
@@ -237,22 +348,6 @@ Our system implements multiple layers of security for gate verification:
 - Each guest gets a unique, non-reusable `qrToken`
 - Tokens are UUID-based and database-indexed
 - Cannot be predicted or forged
-
-### Best Practices for Team
-
-**DO:**
-
-- Send authorization tokens in `Authorization: Bearer <token>` header
-- Validate token expiry before API calls
-- Log all gate verification attempts
-- Hash passwords before storage
-
-  **DON'T:**
-
-- Expose JWT secrets in client code
-- Hardcode credentials in repositories
-- Store sensitive data in local storage
-- Reuse QR tokens across events
 
 ---
 
@@ -304,64 +399,128 @@ Notes
 
 - Invitation emails include an attached `ticket.pdf` (ticket contains QR). For anti-screenshot protection the guest app should compute a rotating TOTP every 30s from the invitation token and present that dynamic QR at the gate. The scanner extracts the TOTP and calls the verify endpoint.
 - If email delivery is failing, check `EMAIL_*` env vars and `data.mail` in the invite response for `messageId` or `error` details.
+---
 
-## Troubleshooting
+## Validation & Error Handling
 
-### Docker Issues
+### Validation
+- Zod schemas live in `src/modules/auth/authValidation.js`.
+- Runtime validation is enforced by `src/middlewares/validateMiddleware.js`.
 
-| Problem                        | Solution                                                     |
-| ------------------------------ | ------------------------------------------------------------ |
-| `docker: command not found`    | Restart Docker Desktop or terminal                           |
-| `Port 5000 already in use`     | `docker-compose down` or change port in `docker-compose.yml` |
-| `Cannot connect to PostgreSQL` | Ensure `docker-compose up` ran successfully, check logs      |
+### Error formatting
+- `src/utils/AppError.js` is used by auth services.
+- `src/middlewares/errorMiddleware.js` converts various error types into consistent JSON responses.
 
-### Database Issues
+---
 
-| Problem                   | Solution                                    |
-| ------------------------- | ------------------------------------------- |
-| `Prisma client not found` | Run `npm install` and rebuild containers    |
-| `Migration failed`        | Check schema syntax, review Prisma docs     |
-| `Database locked`         | Restart Docker: `docker-compose restart db` |
+## Database (Prisma)
 
-### Development Issues
+- Prisma client is configured in `src/config/prisma.js`.
+- Schema lives in `prisma/schema.prisma`.
 
-| Problem                | Solution                                               |
-| ---------------------- | ------------------------------------------------------ |
-| Changes not reflecting | Ensure nodemon is running; check `docker-compose logs` |
-| Port conflicts         | Modify `docker-compose.yml` port mappings              |
-| Module not found       | Clear node_modules and reinstall: `npm install`        |
-
-### Check Status
+Common dev/ops commands:
 
 ```bash
-# View running containers
-docker-compose ps
+# Generate Prisma client
+npx prisma generate
 
-# View application logs
-docker-compose logs -f backend
+# Create and apply migration during development
+npx prisma migrate dev
 
-# View database logs
-docker-compose logs -f db
+# Apply migrations in production-like mode
+npx prisma migrate deploy
 
-# Rebuild everything
-docker-compose up --build --force-recreate
+# Inspect schema visually
+npx prisma studio
 ```
 
 ---
 
-## Support & Questions
+## Dockerization
 
-For issues, questions, or feature requests:
+Defined in `docker/docker-compose.yml`.
 
-1. Check this README and existing GitHub issues
-2. Create a new GitHub issue with detailed description
-3. Contact the backend team lead
+Services:
+- `api`
+  - built from `docker/Dockerfile.api`
+  - runs `npx prisma generate` + `npx prisma migrate deploy` + `npm run dev`
+  - exposes host port: **5003**
+  - mounts source into container for dev (`volumes: ../:/app`)
+
+- `postgres`
+  - `postgres:16-alpine`
+  - healthcheck with `pg_isready`
+
+- `redis`
+  - `redis:7-alpine`
+  - appendonly enabled
+  - healthcheck with `redis-cli ping`
+
+- `nginx`
+  - built from `nginx/Dockerfile`
+  - exposes port **80**
+
+- `prisma-studio`
+  - runs `npx prisma studio --browser none --port 5555`
+  - exposed to host port **5555**
+
+## Troubleshooting
+
+### Docker
+
+- **Prisma migrations fail at startup**
+  - Confirm `DATABASE_URL` is correct
+  - Confirm Prisma schema matches expected DB
+
+- **Cannot connect to PostgreSQL**
+  - Check `docker-compose logs -f postgres` (or `docker-compose logs -f api`)
+
+- **Redis store errors / rate limiter not working**
+  - Confirm `REDIS_URL` and Redis container health
+
+### Auth & Email
+
+- **Invalid token / blocklisted token**
+  - Ensure you send the correct `Authorization` header: `Bearer <accessToken>`
+  - If you refresh, old access token may be blocklisted by design.
+
+- **Emails not sending**
+  - Ensure SMTP creds in `.env` are correct (`EMAIL_*`)
+  - Ensure outbound email is allowed by your environment
 
 ---
 
-## Branch & Workflow Guidelines
+## Notes
 
-### Critical Rules
+- This project relies on **cookie-based refresh tokens** (`refreshToken` cookie) for refresh flows.
+- Tokens are **hardened** using Redis:
+  - refresh tokens stored per user
+  - access tokens blocklisted on rotation/logout
+
+---
+
+## Support
+
+If you hit issues:
+1. Check logs: `docker-compose logs -f api` and `docker-compose logs -f postgres`
+2. Verify environment variables match `src/config/env.js`
+3. Confirm Redis and Postgres containers are healthy
+
+### Best Practices for Team
+
+**DO:**
+
+- Send authorization tokens in `Authorization: Bearer <token>` header
+- Validate token expiry before API calls
+- Log all gate verification attempts
+- Hash passwords before storage
+
+  **DON'T:**
+
+- Expose JWT secrets in client code
+- Hardcode credentials in repositories
+- Store sensitive data in local storage
+- Reuse QR tokens across events
 
 1. **NEVER push directly to `main`**
    - `main` is a protected branch for production-ready code only

@@ -1,6 +1,6 @@
 /**
  * INVITATION WORKFLOW DESIGN
- * 
+ *
  * Flow: Host invites guests → Guests receive invitation → Guests confirm RSVP
  * Security: Each guest gets unique QR token for gate verification
  */
@@ -9,7 +9,7 @@ export const INVITATION_WORKFLOW = {
   /**
    * Step 1: Host creates guest list
    * POST /events/{eventId}/guests/bulk-invite
-   * 
+   *
    * Request:
    * {
    *   guests: [
@@ -17,7 +17,7 @@ export const INVITATION_WORKFLOW = {
    *     { name: "Jane Doe", email: "jane@example.com" }
    *   ]
    * }
-   * 
+   *
    * Response:
    * {
    *   success: true,
@@ -50,25 +50,25 @@ export const INVITATION_WORKFLOW = {
       "4. Create guest records",
       "5. Generate unique QR token per guest",
       "6. Send email/SMS invitations",
-      "7. Return created guests"
-    ]
+      "7. Return created guests",
+    ],
   },
 
   /**
    * Step 2: Guest receives invitation (Email/SMS)
-   * 
+   *
    * Email Template:
    * ---
    * Subject: You're invited to {eventTitle}
-   * 
+   *
    * Dear {guestName},
-   * 
+   *
    * {hostName} invites you to {eventTitle}
    * Date: {eventDate}
    * Venue: {eventVenue}
-   * 
+   *
    * Your Event Code: {eventCode}
-   * 
+   *
    * Click here to confirm your attendance
    * Link: {frontendUrl}/events/{eventCode}/rsvp?token={qrToken}
    * ---
@@ -82,19 +82,19 @@ export const INVITATION_WORKFLOW = {
       eventCode: "ABC-123-DEF",
       guestName: "string",
       qrToken: "unique-uuid",
-      responseLink: "frontend_url"
-    }
+      responseLink: "frontend_url",
+    },
   },
 
   /**
    * Step 3: Guest confirms RSVP
    * PUT /guests/{guestId}/rsvp
-   * 
+   *
    * Request:
    * {
    *   status: "CONFIRMED" | "DECLINED"
    * }
-   * 
+   *
    * Response:
    * {
    *   success: true,
@@ -117,14 +117,14 @@ export const INVITATION_WORKFLOW = {
       "2. Validate event still accepting RSVPs",
       "3. Update rsvpStatus",
       "4. Send confirmation email to host",
-      "5. Return updated guest"
-    ]
+      "5. Return updated guest",
+    ],
   },
 
   /**
    * Step 4: Host views guest list
    * GET /events/{eventId}/guests?page=1&limit=10&rsvpStatus=CONFIRMED
-   * 
+   *
    * Response:
    * {
    *   success: true,
@@ -149,8 +149,8 @@ export const INVITATION_WORKFLOW = {
     queryParams: {
       page: "number (default: 1)",
       limit: "number (default: 10)",
-      rsvpStatus: "PENDING | CONFIRMED | DECLINED (optional)"
-    }
+      rsvpStatus: "PENDING | CONFIRMED | DECLINED (optional)",
+    },
   },
 
   /**
@@ -158,8 +158,8 @@ export const INVITATION_WORKFLOW = {
    * See QR_VERIFICATION_WORKFLOW
    */
   step5_gate_checkin: {
-    reference: "QR_VERIFICATION_WORKFLOW"
-  }
+    reference: "QR_VERIFICATION_WORKFLOW",
+  },
 };
 
 export const INVITATION_WORKFLOW_DIAGRAM = `

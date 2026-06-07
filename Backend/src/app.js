@@ -1,34 +1,40 @@
-import "dotenv/config";
 import express from "express";
-
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import corsMiddleware from "./config/cors.js";
 import routes from "./routes/index.js";
-import { requestLogger } from "./middlewares/requestLogger.js";
-import { createRateLimiter } from "./middlewares/rateLimiter.js";
-import { notFoundHandler } from "./middlewares/notFoundHandler.js";
-import { errorHandler } from "./middlewares/errorHandler.js";
+import { requestLogger } from "./middlewares/requestLoggerMiddleware.js";
+import { apiLimiter } from "./middlewares/rateLimitMiddleware.js";
+import { errorHandler } from "./middlewares/errorMiddleware.js";
+import { notFoundHandler } from "./middlewares/notFoundMiddleware.js";
 
-const app = express();
+const app = express(); // Init express ap
 
-// Middleware
-app.use(corsMiddleware);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(requestLogger);
-app.use(createRateLimiter());
 
-// Health check
+app.use(cookieParser()); // Middleware to parse refresh token from cookies for authentication
+app.use(helmet()); // Middleware to set security-related HTTP headers for protection against common vulnerabilities
+app.use(corsMiddleware); // Middleware to enable CORS for frontend-backend communication in development and production environments
+
+app.use(express.json()); // Middleware to parse JSON request bodies for API endpoints
+// Middleware to parse URL-encoded request bodies for form submissions and other non-JSON payloads
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
+app.use(requestLogger); // Middleware to log incoming requests for debugging and monitoring purposes
+app.use(apiLimiter); // Middleware to limit the number of requests from a single IP address
+
+// Health check endpoint
 app.get("/api/v1/health", (req, res) => {
-  res
-    .status(200)
-    .json({ status: "OK", message: "MyGuestly AI Backend is live" });
+  res.status(200).json({
+    status: "OK",
+  });
 });
 
-// API routes
-app.use("/api/v1", routes);
-
-// 404 and error handlers
-app.use(notFoundHandler);
-app.use(errorHandler);
+app.use("/api/v1", routes); // Main API routes
+app.use(notFoundHandler); // Middleware to handle 404 Not Found errors for undefined routes
+app.use(errorHandler); // Middleware to handle errors and send appropriate responses to the client
 
 export default app;

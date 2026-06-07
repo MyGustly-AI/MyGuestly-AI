@@ -52,7 +52,7 @@ class EventController extends BaseController {
       if (rsvpDate >= start) {
         return this.badRequest(
           res,
-          "RSVP deadline must be before the event start date",
+          "RSVP deadline must be before the event start date"
         );
       }
     }
@@ -108,7 +108,7 @@ class EventController extends BaseController {
       hostId,
       filter,
       skip,
-      validLimit,
+      validLimit
     );
 
     this.paginated(res, data, validPage, validLimit, total, "Events retrieved");
@@ -169,7 +169,7 @@ class EventController extends BaseController {
       if (updateData.startDate <= event.rsvpDeadline) {
         return this.badRequest(
           res,
-          "Event start date must be after the existing RSVP deadline",
+          "Event start date must be after the existing RSVP deadline"
         );
       }
     }
@@ -179,7 +179,7 @@ class EventController extends BaseController {
       if (startDateToCompare && updateData.rsvpDeadline >= startDateToCompare) {
         return this.badRequest(
           res,
-          "RSVP deadline must be before the event start date",
+          "RSVP deadline must be before the event start date"
         );
       }
     }

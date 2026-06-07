@@ -1,21 +1,18 @@
 /**
  * Main Routes Index
  * Centralizes all API routes
- */
-
-import express from "express";
-import eventRoutes from "./eventRoutes.js";
-import verifyController from "../controllers/VerifyController.js";
-
-const router = express.Router();
-
-/**
  * API v1 Routes
  * /api/v1/*
  */
+import { Router } from "express";
+const router = Router();
 
-// Event routes
-router.use("/events", eventRoutes);
+import authRoutes from "../modules/auth/authRoutes.js";
+import eventRoutes from "./eventRoutes.js";
+import verifyController from "../controllers/VerifyController.js";
+
+router.use("/auth", authRoutes); // Authentication routes for user registration, login, token refresh, and logout
+router.use("/events", eventRoutes); // Event routes for managing guest events, RSVPs, and related operations
 
 // Gate verification endpoint (scanning QR at gate)
 router.post("/verify-gate/:token", verifyController.verifyGate);
@@ -23,7 +20,6 @@ router.post("/verify-gate/:token", verifyController.verifyGate);
 // More routes will be added here:
 // router.use("/guests", guestRoutes);
 // router.use("/media", mediaRoutes);
-// router.use("/auth", authRoutes);
-// etc.
+
 
 export default router;

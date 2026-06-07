@@ -1,13 +1,9 @@
-import "dotenv/config";
 import app from "./app.js";
+import { env } from "./config/env.js";
 import startEmailWorker from "./utils/emailWorker.js";
 
-const PORT = process.env.PORT || 5003;
-
-const server = app.listen(PORT, () => {
-  console.log(
-    `Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
-  );
+const server = app.listen(env.PORT, () => {
+  console.log(`Server running on port ${env.PORT}`);
 });
 
 // Start background workers (email queue)
@@ -20,17 +16,18 @@ try {
 
 // Graceful shutdown
 process.on("SIGINT", () => {
-  console.log("Shutting down server...");
+  console.log("Graceful shutdown");
+
   server.close(() => {
-    console.log("Server closed");
     process.exit(0);
   });
 });
 
+// Graceful shutdown on SIGTERM signal
 process.on("SIGTERM", () => {
-  console.log("SIGTERM received...");
+  console.log("Graceful shutdown");
+
   server.close(() => {
-    console.log("Server closed");
     process.exit(0);
   });
 });

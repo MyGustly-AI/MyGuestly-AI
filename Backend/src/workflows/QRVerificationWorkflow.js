@@ -1,6 +1,6 @@
 /**
  * QR VERIFICATION WORKFLOW DESIGN
- * 
+ *
  * CRITICAL FLOW: Secure gate access with anti-fraud measures
  * - TOTP prevents screenshot attacks
  * - Atomic check-in prevents duplicate scans
@@ -10,33 +10,33 @@
 export const QR_VERIFICATION_WORKFLOW = {
   /**
    * STEP 1: GENERATE QR CODE (During invitation)
-   * 
+   *
    * Each guest gets:
    * - Permanent qrToken: UUID that doesn't change
    * - Dynamic TOTP: Changes every 30 seconds
    * - Event code: ABC-123-DEF (short readable code)
-   * 
+   *
    * Frontend displays: {eventCode}-{TOTP}
    * Example: ABC-123-DEF-847392
-   * 
+   *
    * Encoded in QR:
    * "https://myguestly.ai/verify/{qrToken}"
-   * 
+   *
    * QR code is included in guest invitation
    */
   step1_generate_qr: {
     backend_generates: {
       qrToken: "UUID (permanent)",
       eventCode: "ABC-123-DEF (short code)",
-      totp: "6-digit code (changes every 30s)"
+      totp: "6-digit code (changes every 30s)",
     },
     frontend_displays: "QR code + visible code ABC-123-DEF-847392",
     encoding: "https://myguestly.ai/verify/{qrToken}",
     security_features: [
       "QR token is unique per guest",
       "TOTP regenerates every 30 seconds",
-      "Screenshot useless after 30 seconds"
-    ]
+      "Screenshot useless after 30 seconds",
+    ],
   },
 
   /**
@@ -54,14 +54,14 @@ export const QR_VERIFICATION_WORKFLOW = {
       "Take screenshot",
       "Save to phone gallery",
       "Add to Apple Wallet",
-      "Add to Google Pay"
-    ]
+      "Add to Google Pay",
+    ],
   },
 
   /**
    * STEP 3: AT EVENT - GATE ENTRY
    * Organizer has mobile app with camera/scanner
-   * 
+   *
    * Flow:
    * 1. Guest arrives at venue entrance
    * 2. Organizer/bouncer opens app to scanner
@@ -71,19 +71,19 @@ export const QR_VERIFICATION_WORKFLOW = {
   step3_gate_scan: {
     device: "Organizer's phone with MyGuestly app",
     method: "Camera scans QR code",
-    captures: "qrToken from QR code"
+    captures: "qrToken from QR code",
   },
 
   /**
    * STEP 4: BACKEND VERIFICATION (CRITICAL SECURITY)
-   * 
+   *
    * POST /verify-gate/{qrToken}
-   * 
+   *
    * Request:
    * {
    *   totp: "847392"
    * }
-   * 
+   *
    * Response on success:
    * {
    *   success: true,
@@ -96,7 +96,7 @@ export const QR_VERIFICATION_WORKFLOW = {
    *     status: "CHECKED_IN"
    *   }
    * }
-   * 
+   *
    * Response on error:
    * {
    *   success: false,
@@ -109,45 +109,45 @@ export const QR_VERIFICATION_WORKFLOW = {
     method: "VERIFY + CHECK-IN",
     security: "authMiddleware, authorize(ADMIN, ORGANIZER)",
     validationSchema: "qrSchemas.verify",
-    
+
     process: [
       "1. Find guest by qrToken in database",
       "2. Verify guest exists and is invited",
       "3. Verify TOTP is within tolerance window (±1 step)",
       "4. Atomic update: set checkedIn = true",
       "5. Record checkInTime timestamp",
-      "6. Return check-in confirmation"
+      "6. Return check-in confirmation",
     ],
 
     security_checks: [
       {
         check: "QR Token Valid?",
-        invalid_response: "401 Unauthorized - Invalid token"
+        invalid_response: "401 Unauthorized - Invalid token",
       },
       {
         check: "Guest Invited to This Event?",
-        invalid_response: "404 Not Found - Guest not invited"
+        invalid_response: "404 Not Found - Guest not invited",
       },
       {
         check: "TOTP Correct (with ±1 step tolerance)?",
         invalid_response: "400 Bad Request - Invalid TOTP",
-        details: "Allows for clock skew between devices"
+        details: "Allows for clock skew between devices",
       },
       {
         check: "Already Checked In?",
         invalid_response: "409 Conflict - Duplicate scan (already checked in)",
-        details: "Prevents replay attacks"
+        details: "Prevents replay attacks",
       },
       {
         check: "Event Not Cancelled?",
-        invalid_response: "400 Bad Request - Event cancelled"
-      }
-    ]
+        invalid_response: "400 Bad Request - Event cancelled",
+      },
+    ],
   },
 
   /**
    * STEP 4B: ATOMIC CHECK-IN (CRITICAL)
-   * 
+   *
    * Pseudocode:
    * ```
    * BEGIN TRANSACTION
@@ -155,13 +155,13 @@ export const QR_VERIFICATION_WORKFLOW = {
    *   IF guest.checkedIn = true
    *     THROW ConflictError("Already checked in")
    *   END IF
-   *   UPDATE guest SET 
+   *   UPDATE guest SET
    *     checkedIn = true,
    *     checkInTime = NOW()
    *   WHERE qrToken = ?
    * COMMIT
    * ```
-   * 
+   *
    * Ensures:
    * - No race conditions
    * - Exactly one check-in per guest
@@ -172,20 +172,20 @@ export const QR_VERIFICATION_WORKFLOW = {
     prevents: [
       "Double-check-in",
       "Race condition attacks",
-      "Concurrent scan exploits"
+      "Concurrent scan exploits",
     ],
-    database_lock: "SELECT FOR UPDATE to lock row"
+    database_lock: "SELECT FOR UPDATE to lock row",
   },
 
   /**
    * STEP 5: DUPLICATE SCAN DETECTION & LOGGING
-   * 
+   *
    * If duplicate QR code scanned:
    * 1. Transaction detects checkedIn = true
    * 2. Returns 409 Conflict error
    * 3. Logs security incident
    * 4. Alert sent to event organizer
-   * 
+   *
    * Log entry:
    * {
    *   eventId: "uuid",
@@ -200,7 +200,7 @@ export const QR_VERIFICATION_WORKFLOW = {
   step5_security_logging: {
     duplicate_scan: {
       response: "409 Conflict",
-      message: "Guest already checked in"
+      message: "Guest already checked in",
     },
     logging: {
       captures: [
@@ -209,24 +209,24 @@ export const QR_VERIFICATION_WORKFLOW = {
         "Timestamp",
         "Scan type (normal, duplicate, invalid)",
         "Organizer ID who scanned",
-        "Device/scanner ID"
+        "Device/scanner ID",
       ],
-      creates_alert: "Host notified of duplicate scan attempt"
-    }
+      creates_alert: "Host notified of duplicate scan attempt",
+    },
   },
 
   /**
    * STEP 6: ORGANIZER FEEDBACK
-   * 
+   *
    * Frontend app shows:
    * ✓ GREEN: Guest verified
    *   - "Welcome John Doe!"
    *   - Attendance updated: 118/150
-   * 
+   *
    * ✗ RED: Already checked in
    *   - "John Doe already checked in at 2:05 PM"
    *   - Organizer can view guest details
-   * 
+   *
    * ✗ RED: Invalid QR
    *   - "Invalid QR code"
    *   - "This guest may not be invited"
@@ -235,28 +235,28 @@ export const QR_VERIFICATION_WORKFLOW = {
     success: {
       color: "GREEN",
       message: "Welcome {guestName}!",
-      details: "Attendance: 118/150 guests"
+      details: "Attendance: 118/150 guests",
     },
     duplicate: {
       color: "RED/YELLOW",
       message: "{guestName} already checked in",
-      details: "Checked in at 2:05 PM"
+      details: "Checked in at 2:05 PM",
     },
     invalid: {
       color: "RED",
       message: "Invalid QR code",
-      details: "Guest not found or not invited"
-    }
+      details: "Guest not found or not invited",
+    },
   },
 
   /**
    * STEP 7: REAL-TIME DASHBOARD
-   * 
+   *
    * GET /events/{eventId}/check-ins
-   * 
+   *
    * Returns live check-in statistics
    * Updates every few seconds
-   * 
+   *
    * Response:
    * {
    *   eventId: "uuid",
@@ -281,18 +281,18 @@ export const QR_VERIFICATION_WORKFLOW = {
       "Pending count",
       "Check-in percentage",
       "Recent check-ins (last 50)",
-      "Real-time updates"
-    ]
+      "Real-time updates",
+    ],
   },
 
   /**
    * STEP 8: GUEST LOOKUP (Manual Override)
-   * 
+   *
    * If guest can't scan QR code:
    * 1. Organizer searches guest name
    * 2. Manually verifies guest
    * 3. System creates check-in record
-   * 
+   *
    * GET /events/{eventId}/guests?search=John&limit=10
    */
   step8_manual_checkin: {
@@ -300,8 +300,8 @@ export const QR_VERIFICATION_WORKFLOW = {
     method: "MANUAL VERIFICATION",
     security: "authMiddleware, authorize(ADMIN, ORGANIZER)",
     use_case: "Guest forgot QR or phone died",
-    requires: "Organizer ID verification and confirmation"
-  }
+    requires: "Organizer ID verification and confirmation",
+  },
 };
 
 export const QR_VERIFICATION_DIAGRAM = `
@@ -412,21 +412,21 @@ export const ANTI_FRAUD_MEASURES = {
     method: "Time-based One-Time Password",
     regeneration: "Every 30 seconds",
     validity: "Current ± 1 step (60 seconds total)",
-    prevents: "Screenshot reuse after 30 seconds"
+    prevents: "Screenshot reuse after 30 seconds",
   },
   atomic_checkin: {
     method: "Database transaction lock",
     prevents: "Double check-in, race conditions",
-    guarantees: "Exactly one successful check-in per guest"
+    guarantees: "Exactly one successful check-in per guest",
   },
   duplicate_scan_detection: {
     method: "Check existing checkedIn flag",
     response: "409 Conflict error",
-    logging: "Security incident recorded"
+    logging: "Security incident recorded",
   },
   manual_verification: {
     method: "Organizer can verify guest identity",
     backup: "Manual check-in if QR scanner fails",
-    confirmation: "Requires organizer authentication"
-  }
+    confirmation: "Requires organizer authentication",
+  },
 };
