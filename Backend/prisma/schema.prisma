@@ -122,6 +122,8 @@ model Invitation {
   id        String           @id @default(uuid())
   status    InvitationStatus @default(PENDING)
   token     String           @unique @default(uuid())
+  sentAt    DateTime?
+  sentBy    String?
   rsvpAt    DateTime?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
