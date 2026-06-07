@@ -3,7 +3,7 @@ import { GuestService } from "../services/GuestService.js";
 import { EventService } from "../services/EventService.js";
 import { AppError } from "../utils/AppError.js";
 import { prisma } from "../utils/prisma.js";
-import EmailService from "../utils/emailService.js";
+import { emailQueue } from "../utils/emailQueue.js";
 import QRCode from "qrcode";
 import {env} from "../config/env.js";
 
@@ -79,29 +79,36 @@ class GuestController extends BaseController {
       console.error("Failed to generate QR code image:", err?.message || err);
     }
 
-    // Send invitation email (if email present) and capture result for debugging
+    // Enqueue invitation email job so sending doesn't block the API
     let mailResult = null;
-    let mailError = null;
-    try {
-      mailResult = await EmailService.sendInvitation({
-        guest,
-        event,
-        invitationLink: invitation.invitationLink,
-        qrImageBase64: qrBase64,
-      });
-    } catch (err) {
-      mailError = err?.message || String(err);
-      // Log and continue — email failures shouldn't block creation
-      console.error("Invitation email failed:", mailError);
+    if (guest.email) {
+      try {
+        const job = await emailQueue.add(
+          "invitation",
+          {
+            guest,
+            event,
+            invitationLink: invitation.invitationLink,
+            qrImageBase64: qrBase64,
+            invitationId: invitationRecord.id,
+            hostId,
+          },
+          { attempts: 3, backoff: { type: "exponential", delay: 60000 } },
+        );
+        mailResult = { enqueued: true, jobId: job.id };
+      } catch (err) {
+        console.error(
+          "Failed to enqueue invitation email:",
+          err?.message || err,
+        );
+      }
     }
 
     this.created(res, "Guest invited successfully", {
       guest,
       invitation,
       existing: wasExisting,
-      mail: mailResult
-        ? { messageId: mailResult.messageId, previewUrl: mailResult.previewUrl }
-        : { error: mailError },
+      mail: mailResult || { enqueued: false },
     });
   });
 
@@ -139,11 +146,22 @@ class GuestController extends BaseController {
         // Note: bulkInvite created records already, but we don't have their ids/qr tokens here.
         // For now, send a simple notification with event details and request they visit the RSVP page.
         const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}`;
-        await EmailService.sendMail({
-          to: g.email,
-          subject: `Invitation: ${event.title}`,
-          html: `<p>Hi ${g.name || "Guest"},</p><p>You are invited to <strong>${event.title}</strong>. RSVP here: <a href="${invitationLink}">${invitationLink}</a></p>`,
-        });
+        try {
+          await emailQueue.add(
+            "invitation",
+            {
+              guest: { fullName: g.name, email: g.email },
+              event,
+              invitationLink,
+            },
+            { attempts: 3, backoff: { type: "exponential", delay: 60000 } },
+          );
+        } catch (err) {
+          console.error(
+            "Failed to enqueue bulk invitation email:",
+            err?.message || err,
+          );
+        }
       }
     } catch (err) {
       console.error("Bulk invitation email(s) failed:", err?.message || err);

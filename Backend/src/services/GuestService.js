@@ -20,6 +20,51 @@ export class GuestService extends BaseService {
       if (where.OR.length > 0) {
         const existing = await this.model.findFirst({ where });
         if (existing) {
+          // If caller provided updated contact details, merge them into the existing record
+          const updates = {};
+          if (guestData.fullName && guestData.fullName !== existing.fullName)
+            updates.fullName = guestData.fullName;
+
+          // Check uniqueness before attempting to update email/phone to avoid P2002
+          if (guestData.email && guestData.email !== existing.email) {
+            const conflict = await this.model.findFirst({
+              where: { eventId, email: guestData.email },
+            });
+            if (!conflict || conflict.id === existing.id) {
+              updates.email = guestData.email;
+            } else {
+              // another guest already has this email for the event; skip updating email
+              // keep existing email and log for debugging
+              // eslint-disable-next-line no-console
+              console.warn(
+                `Skipping email update for guest ${existing.id}: email already used by ${conflict.id}`,
+              );
+            }
+          }
+
+          if (guestData.phone && guestData.phone !== existing.phone) {
+            const conflictPhone = await this.model.findFirst({
+              where: { eventId, phone: guestData.phone },
+            });
+            if (!conflictPhone || conflictPhone.id === existing.id) {
+              updates.phone = guestData.phone;
+            } else {
+              // another guest already has this phone for the event; skip updating phone
+              // eslint-disable-next-line no-console
+              console.warn(
+                `Skipping phone update for guest ${existing.id}: phone already used by ${conflictPhone.id}`,
+              );
+            }
+          }
+
+          if (Object.keys(updates).length > 0) {
+            const patched = await this.model.update({
+              where: { id: existing.id },
+              data: updates,
+            });
+            return { ...patched, _existing: true };
+          }
+
           // Return existing guest instead of attempting a duplicate create
           return { ...existing, _existing: true };
         }
@@ -79,6 +124,23 @@ export class GuestService extends BaseService {
       const guest = await this.findById(guestId);
       if (guest.eventId !== eventId) {
         throw AppError.badRequest("Guest does not belong to this event");
+      }
+
+      // If confirming an RSVP, ensure event capacity is not exceeded
+      if (status === "CONFIRMED") {
+        const event = await this.prisma.event.findUnique({
+          where: { id: eventId },
+        });
+        if (!event) throw AppError.notFound("Event not found");
+
+        const confirmedCount = await this.model.count({
+          where: { eventId, rsvpStatus: "CONFIRMED" },
+        });
+        if (event.maxGuests > 0 && confirmedCount >= event.maxGuests) {
+          throw AppError.badRequest(
+            "Event capacity reached. Cannot confirm RSVP.",
+          );
+        }
       }
 
       const updated = await this.update(guestId, {
