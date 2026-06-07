@@ -227,7 +227,7 @@ export class EventService extends BaseService {
       // Only draft or completed events can be deleted
       if (!["DRAFT", "COMPLETED"].includes(event.status)) {
         throw AppError.badRequest(
-          "Cannot delete active or ongoing events. Archive instead.",
+          "Cannot delete active or ongoing events. Archive instead."
         );
       }
 

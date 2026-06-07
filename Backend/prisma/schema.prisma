@@ -9,9 +9,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Connection URL moved to runtime configuration for Prisma v7+.
-  // Set DATABASE_URL in your environment or configure an adapter when
-  // instantiating PrismaClient. Example: new PrismaClient({ adapter: 'postgresql' })
+
 }
 
 // ─────────────────────────────────────────

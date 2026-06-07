@@ -40,7 +40,7 @@ export class BaseService {
     where = {},
     skip = 0,
     take = 10,
-    orderBy = { createdAt: "desc" },
+    orderBy = { createdAt: "desc" }
   ) {
     try {
       const [records, total] = await Promise.all([

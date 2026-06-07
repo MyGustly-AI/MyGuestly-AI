@@ -39,7 +39,7 @@ export class ApiResponse {
   static accepted(
     res,
     message = "Request accepted for processing",
-    data = null,
+    data = null
   ) {
     return this.success(res, message, data, 202);
   }
@@ -67,7 +67,7 @@ export class ApiResponse {
     page = 1,
     limit = 10,
     total = 0,
-    message = "Data retrieved successfully",
+    message = "Data retrieved successfully"
   ) {
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
@@ -101,7 +101,7 @@ export class ApiResponse {
     res,
     message = "Internal Server Error",
     errors = null,
-    statusCode = 500,
+    statusCode = 500
   ) {
     return res.status(statusCode).json({
       success: false,

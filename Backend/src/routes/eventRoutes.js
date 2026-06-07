@@ -6,7 +6,8 @@
 import express from "express";
 import eventController from "../controllers/EventController.js";
 import guestRoutes from "./guestRoutes.js";
-import { authMiddleware, authorize } from "../middlewares/auth.js";
+import { authorize } from "../middlewares/authorizeMiddleware.js";
+import { authenticate } from "../middlewares/authenticateMiddleware.js";
 import { validateRequest, validateQuery } from "../utils/validationSchemas.js";
 import { eventSchemas } from "../utils/validationSchemas.js";
 
@@ -19,10 +20,10 @@ const router = express.Router();
  */
 router.post(
   "/",
-  authMiddleware,
+  authenticate,
   authorize("HOST"),
   validateRequest(eventSchemas.create),
-  eventController.createEvent,
+  eventController.createEvent
 );
 
 /**
@@ -32,9 +33,9 @@ router.post(
  */
 router.get(
   "/",
-  authMiddleware,
+  authenticate,
   validateQuery(eventSchemas.list),
-  eventController.listEvents,
+  eventController.listEvents
 );
 
 /**
@@ -51,10 +52,10 @@ router.get("/:eventId", eventController.getEvent);
  */
 router.put(
   "/:eventId",
-  authMiddleware,
+  authenticate,
   authorize("HOST"),
   validateRequest(eventSchemas.update),
-  eventController.updateEvent,
+  eventController.updateEvent
 );
 
 /**
@@ -64,9 +65,9 @@ router.put(
  */
 router.post(
   "/:eventId/publish",
-  authMiddleware,
+  authenticate,
   authorize("HOST"),
-  eventController.publishEvent,
+  eventController.publishEvent
 );
 
 /**
@@ -74,11 +75,10 @@ router.post(
  * Start event (mark as ongoing)
  * Auth: Required (event owner)
  */
-router.post(
-  "/:eventId/start",
-  authMiddleware,
+router.post("/:eventId/start",
+  authenticate,
   authorize("HOST"),
-  eventController.startEvent,
+  eventController.startEvent
 );
 
 /**
@@ -88,9 +88,9 @@ router.post(
  */
 router.post(
   "/:eventId/end",
-  authMiddleware,
+  authenticate,
   authorize("HOST"),
-  eventController.endEvent,
+  eventController.endEvent
 );
 
 /**
@@ -100,9 +100,9 @@ router.post(
  */
 router.delete(
   "/:eventId",
-  authMiddleware,
+  authenticate,
   authorize("HOST"),
-  eventController.deleteEvent,
+  eventController.deleteEvent
 );
 
 // Nested guest routes for the invitation module
@@ -122,9 +122,9 @@ router.get("/:eventId/capacity", eventController.checkCapacity);
  */
 router.get(
   "/:eventId/dashboard",
-  authMiddleware,
+  authenticate,
   authorize("HOST"),
-  eventController.getDashboard,
+  eventController.getDashboard
 );
 
 export default router;
