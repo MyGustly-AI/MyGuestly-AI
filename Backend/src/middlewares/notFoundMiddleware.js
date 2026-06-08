@@ -1,9 +1,10 @@
-/**
- * 404 Not Found Middleware
- * Handles undefined routes
- */
+import { ApiResponse } from "../utils/ApiResponse.js";
+
 export const notFoundHandler = (req, res) => {
-    return ApiResponse.notFound(
-        res, `Route ${req.method} ${req.originalUrl} not found`
-    );
+  return ApiResponse.notFound(
+    res,
+    `Route ${req.method} ${req.originalUrl} not found`,
+  );
 };
+
+export default notFoundHandler;

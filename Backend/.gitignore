@@ -3,5 +3,8 @@ node_modules
 .env
 
 /src/generated/prisma
+# Ignore log files
+logs
+*.log
 
-/src/generated/prisma
+tempjwt2.mjs

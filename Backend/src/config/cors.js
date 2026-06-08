@@ -1,5 +1,5 @@
 import cors from "cors";
-import {env} from "./env.js";
+import env from "./env.js";
 
 const allowedOrigins = env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
 

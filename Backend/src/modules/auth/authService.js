@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { env } from "../../config/env.js";
+import env from "../../config/env.js";
 import prisma from "../../config/prisma.js";
 import { redis } from "../../config/redis.js";
 import {hashPassword, comparePassword} from "../../utils/passwordUtil.js";
