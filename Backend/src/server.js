@@ -1,5 +1,5 @@
 import app from "./app.js";
-import { env } from "./config/env.js";
+import env from "./config/env.js";
 import startEmailWorker from "./utils/emailWorker.js";
 
 const server = app.listen(env.PORT, () => {

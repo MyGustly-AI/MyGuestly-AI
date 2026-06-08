@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { env } from "../config/env.js";
+import env from "../config/env.js";
 
 // Auth middleware that allows optional authentication
 export const optionalAuth = (req, res, next) => {

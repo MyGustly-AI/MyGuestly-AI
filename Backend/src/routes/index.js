@@ -8,7 +8,7 @@ import { Router } from "express";
 const router = Router();
 
 import authRoutes from "../modules/auth/authRoutes.js";
-import eventRoutes from "./eventRoutes.js";
+import eventRoutes from "../modules/events/eventRoutes.js";
 import verifyController from "../controllers/VerifyController.js";
 
 router.use("/auth", authRoutes); // Authentication routes for user registration, login, token refresh, and logout

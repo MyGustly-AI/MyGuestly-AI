@@ -3,6 +3,7 @@
 An **AI-powered event hosting and guest experience platform** backend built with Node.js + Express.
 
 This service provides:
+
 - Secure user authentication (access + refresh JWTs)
 - Email verification, forgot/reset password flows
 - Centralized security middleware (rate limiting, headers, validation)

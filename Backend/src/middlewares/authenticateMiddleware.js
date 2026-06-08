@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
-import { env } from "../config/env.js";
+import env from "../config/env.js";
 import {redis} from "../config/redis.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+// Authentication Middleware
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
