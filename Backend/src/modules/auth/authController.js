@@ -1,5 +1,6 @@
 import { registerUser, loginUser, refreshUserToken, logoutUser, getCurrentUser, updateProfile, changePassword, verifyEmail, forgotPassword, resetPassword, deleteUserAccount } from "./authService.js";
-import { ApiResponse } from "../../utils/ApiResponse.js";
+import { ApiResponse } from "../../shared/utils/ApiResponse.js";
+
 
 
 

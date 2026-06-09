@@ -5,8 +5,8 @@
 
 import { BaseController } from "../../shared/base/BaseController.js";
 import { EventService } from "./eventService.js";
-import { AppError } from "../../utils/AppError.js";
-import { prisma } from "../../utils/prisma.js";
+import { AppError } from "../../shared/utils/AppError.js";
+import { prisma } from "../../shared/utils/prisma.js";
 
 class EventController extends BaseController {
   constructor() {

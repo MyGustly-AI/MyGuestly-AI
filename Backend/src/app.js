@@ -3,10 +3,13 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import corsMiddleware from "./config/cors.js";
 import routes from "./routes/index.js";
-import { requestLogger } from "./middlewares/requestLoggerMiddleware.js";
+import { requestLogger } from "./infra/logs/requestLogger.js";
+import { errorLogger } from "./infra/logs/errorLogger.js";
 import { apiLimiter } from "./middlewares/rateLimitMiddleware.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 import { notFoundHandler } from "./middlewares/notFoundMiddleware.js";
+
+
 
 const app = express(); // Init express ap
 

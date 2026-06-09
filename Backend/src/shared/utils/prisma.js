@@ -4,7 +4,7 @@
  */
 
 import pkg from "@prisma/client";
-import env from "../config/env.js";
+import env from "../../config/env.js";
 import fs from "node:fs";
 import path from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";

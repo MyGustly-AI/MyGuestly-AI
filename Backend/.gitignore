@@ -4,7 +4,7 @@ node_modules
 
 /src/generated/prisma
 # Ignore log files
-logs
+logs/
 *.log
 
 tempjwt2.mjs

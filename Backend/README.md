@@ -1,263 +1,412 @@
-# MyGuestly AI — Backend Service
+# MyGuestly AI — Backend Documentation
 
-An **AI-powered event hosting and guest experience platform** backend built with Node.js + Express.
+MyGuestly is a full-stack event hosting and guest experience platform. The backend service is built with Node.js, Express, Prisma, PostgreSQL, Redis, BullMQ, and Winston. It powers user authentication, event management, guest invitations, QR-based gate verification, structured logging, and asynchronous email delivery.
 
-This service provides:
-
-- Secure user authentication (access + refresh JWTs)
-- Email verification, forgot/reset password flows
-- Centralized security middleware (rate limiting, headers, validation)
-- Redis-backed session hardening (refresh token storage + access token blocklist)
-- Dockerized deployment (API + Postgres + Redis + NGINX + Prisma Studio)
+This document is a practical reference for the current implementation, including the security layer, configuration approach, authentication module, mail/queue system, Docker setup, and the latest logging improvements.
 
 ---
 
-## Table of Contents
+## 1. What the backend does
 
-- [Quick Start](#quick-start)
-- [Project Overview](#project-overview)
-- [Architecture & Project Structure](#architecture--project-structure)
-- [Security & Request Lifecycle](#security--request-lifecycle)
-- [Configuration (Environment Variables)](#configuration-environment-variables)
-- [Auth Module (End-to-End)](#auth-module-end-to-end)
-  - [Token strategy](#token-strategy)
-  - [Routes & behaviors](#routes--behaviors)
-- [Email Service (Nodemailer)](#email-service-nodemailer)
-- [Validation & Error Handling](#validation--error-handling)
-- [Database (Prisma)](#database-prisma)
-- [Dockerization](#dockerization)
-- [Troubleshooting](#troubleshooting)
+The backend currently supports:
+
+- Secure user registration, login, refresh, logout, profile updates, password changes, and account deletion
+- Email verification, password-reset flows, and account lifecycle notifications
+- Event creation, publishing, lifecycle transitions, and host-level dashboards
+- Guest invitation and bulk invitation workflows
+- RSVP updates and guest management
+- QR gate verification with anti-duplicate check-in protection
+- Redis-backed rate limiting and token hardening
+- Structured logging for auth, event, invitation, QR, queue, and worker activity
+- Docker-based development and deployment for API, worker, PostgreSQL, Redis, Prisma Studio, and NGINX
 
 ---
 
-## Quick Start
+## 2. Technology stack
 
-### Prerequisites
-
-- Docker Desktop
-
-### Run with Docker Compose
-
-```bash
-cd MyGuestly-AI/Backend
-cp .env.example .env
-
-docker-compose up --build
-```
-
-Then open:
-- API: **http://localhost:5003/api/v1/health** (health check)
-- Prisma Studio: **http://localhost:5555**
-- NGINX: **http://localhost:80**
-
-> Note: docker-compose port mapping in this repo exposes the API on `5003`.
+- Runtime: Node.js 22
+- Framework: Express 5
+- Database: PostgreSQL via Prisma ORM
+- Cache/queue: Redis + BullMQ
+- Authentication: JWT + Redis token storage + blocklist checks
+- Validation: Zod for auth routes, Joi for event/guest validation
+- Email: Nodemailer with queue-based delivery
+- Logging: Winston
+- Security: Helmet, CORS, cookie parsing, rate limiting
+- Containerization: Docker + Docker Compose
 
 ---
 
-## Project Overview
+## 3. Request lifecycle
 
-The backend is organized as a set of Express middlewares + route modules.
+Every request follows a consistent path:
 
-At a high level:
-1. Requests enter the Express pipeline (`src/app.js`).
-2. Security middleware runs (helmet, CORS, request logging, rate limiting).
-3. Auth middleware protects private endpoints.
-4. Validation middleware ensures request body correctness.
-5. Route handlers call service functions.
-6. Errors are formatted consistently by the centralized error middleware.
+1. The Express app boots from [src/app.js](src/app.js).
+2. Security middleware runs first: Helmet, CORS, cookie parsing, request logging, and rate limiting.
+3. Authentication middleware protects private routes.
+4. Request validation runs before the controller layer.
+5. Controllers delegate to service modules.
+6. Services interact with Prisma, Redis, or the queue layer.
+7. Errors are normalized by the centralized error middleware.
+8. Structured logs are emitted for important outcomes and failures.
 
 ---
 
-## Architecture & Project Structure
+## 4. Project structure
 
-```bash
+```text
 Backend/
+├── docker/
+│   ├── docker-compose.yml
+│   ├── Dockerfile.api
+│   └── Dockerfile.worker
 ├── prisma/
-│   ├── schema.prisma          # Database models (User, Event, Guest, Media)
-│   └── migrations/            # Database version control
+│   ├── schema.prisma
+│   └── migrations/
 ├── src/
-│   ├── app.js                 # Express app configuration
-│   ├── controllers/           # Business logic & request handlers
-│   ├── middlewares/           # Authentication & validation guards
-│   ├── routes/                # HTTP endpoint definitions
-│   ├── services/              # Utility functions & helpers
-│   ├── utils/                 # Shared utilities (Prisma client, validators)
-│   └── generated/prisma/      # Auto-generated Prisma types
-├── .env.example               # Environment variables template (do NOT commit secrets)
-├── Dockerfile                 # Container image instructions
-├── docker-compose.yml         # Multi-container orchestration
-├── nodemon.json               # Development auto-reload config
-├── package.json               # Dependencies & scripts
-└── README.md                  # Documentation
+│   ├── app.js
+│   ├── config/
+│   │   ├── cors.js
+│   │   ├── env.js
+│   │   ├── prisma.js
+│   │   └── redis.js
+│   ├── infra/
+│   │   ├── email/
+│   │   ├── logs/
+│   │   └── queues/
+│   ├── middlewares/
+│   ├── modules/
+│   │   ├── auth/
+│   │   ├── events/
+│   │   ├── guests/
+│   │   └── verification/
+│   ├── orchestration/
+│   ├── routes/
+│   └── shared/
+│       └── utils/
+└── logs/
 ```
 
-Key folders:
+Key responsibilities:
 
-- `src/middlewares/` — authentication, authorization, validation, logging, rate limiting, error/404 handling
-- `src/modules/` — feature modules (currently includes the full auth module and additional module stubs)
-- `src/services/` — service layer (e.g. `emailService`, business services)
-- `src/utils/` — shared utilities (token generation, password hashing, ApiResponse, AppError, etc.)
-- `src/config/` — configuration (env validation, redis, prisma)
-- `src/routes/` — Express route wiring (e.g. `index.js` mounts feature routes)
-
-Core boot files:
-- `src/app.js` — middleware pipeline + health endpoint + route mounting
-- `src/server.js` — starts the HTTP server and implements graceful shutdown
+- [src/middlewares](src/middlewares) — authentication, authorization, validation, request logging, rate limiting, and error handling
+- [src/modules](src/modules) — feature modules for auth, events, guests, and verification
+- [src/infra](src/infra) — email transport, queues, workers, and logging infrastructure
+- [src/shared/utils](src/shared/utils) — shared response helpers, token utilities, password utilities, and Prisma/QR helpers
+- [src/orchestration](src/orchestration) — workflow helpers for registration and verification workflows
 
 ---
 
-## Security & Request Lifecycle
+## 5. Security middleware and request protection
 
-### 1) Security Headers (Helmet)
-- Implemented in `src/app.js` via `helmet()`.
+The backend takes a layered approach to security.
 
-### 2) CORS
-- Implemented in `src/app.js` via `corsMiddleware` (`src/config/cors.js`).
+### Helmet and CORS
+- [src/app.js](src/app.js) enables Helmet for standard security headers.
+- [src/config/cors.js](src/config/cors.js) controls cross-origin access for the frontend and local tools.
 
-### 3) Request Logging
-- Implemented in `src/app.js` via `requestLoggerMiddleware.js`.
+### Request logging
+- Incoming requests are logged through the request logger middleware.
+- Error events are also captured and routed into the logging pipeline.
 
-### 4) Rate Limiting (Redis-backed)
-- Implemented in `src/middlewares/rateLimitMiddleware.js`.
-- General API limiter:
-  - `windowMs: 15m`
-  - `max: 100`
-  - uses `RedisStore` so limits are shared across containers.
-- Login-specific limiter:
-  - `windowMs: 15m`
-  - `max: 5`
-  - mitigates brute-force attempts on `/auth/login`.
+### Rate limiting
+- [src/middlewares/rateLimitMiddleware.js](src/middlewares/rateLimitMiddleware.js) uses Redis-backed rate limiting.
+- The general API limiter protects all endpoints.
+- A login-specific limiter is enforced on authentication attempts to reduce brute-force risk.
 
-### 5) JWT Authentication + Redis Hardening
-- `src/middlewares/authenticateMiddleware.js`
-  - Expects header: `Authorization: Bearer <token>`
-  - Verifies JWT signature using `env.JWT_SECRET`
-  - Sets `req.user` with decoded JWT payload
-  - Checks Redis blocklist:
-    - key: `blocklist:${token}`
+### Authentication and authorization
+- [src/middlewares/authenticateMiddleware.js](src/middlewares/authenticateMiddleware.js) verifies bearer tokens and checks Redis for blocklisted tokens.
+- [src/middlewares/authorizeMiddleware.js](src/middlewares/authorizeMiddleware.js) ensures role-based access for host-only features.
 
-### 6) Optional Auth
-- `src/middlewares/optionalAuthMiddleware.js`
-  - If token is present, it sets `req.user`; otherwise continues without failing.
+### Validation
+- Auth route validation is handled with Zod in [src/modules/auth/authValidation.js](src/modules/auth/authValidation.js).
+- Event and guest validations are handled with Joi schemas in [src/shared/utils/validationSchemas.js](src/shared/utils/validationSchemas.js).
 
-### 7) Validation
-- `src/middlewares/validateMiddleware.js`
-  - Uses `schema.safeParse(req.body)`
-  - On failure returns `400` with `errors`.
-
-### 8) Centralized Error Handling
-- `src/middlewares/errorMiddleware.js` formats errors consistently.
-  - Handles:
-    - custom `AppError` (statusCode/message/errors)
-    - validation errors (400)
-    - JWT errors (401 invalid/expired token)
-    - Prisma errors (400 database operation failed)
+### Error handling
+- [src/middlewares/errorMiddleware.js](src/middlewares/errorMiddleware.js) normalizes thrown errors into consistent API responses.
+- Shared response helpers live in [src/shared/utils/ApiResponse.js](src/shared/utils/ApiResponse.js).
 
 ---
 
-## Configuration (Environment Variables)
+## 6. Configuration and environment variables
 
-Environment variables are validated on startup in `src/config/env.js` using Zod.
+The environment configuration is strictly validated in [src/config/env.js](src/config/env.js) using Zod.
 
-At minimum, the service expects:
+Required variables include:
 
-### Core
-- `PORT` (default `5003`)
-- `NODE_ENV` (`development|production|test`)
-- `DATABASE_URL`
-- `REDIS_URL`
+- Core runtime
+  - PORT
+  - NODE_ENV
+  - DATABASE_URL
+  - REDIS_URL
 
-### JWT
-- `JWT_SECRET` (access token signing)
-- `JWT_REFRESH_SECRET` (refresh token signing)
-- `JWT_ACCESS_EXPIRES_IN` (default `15m`)
-- `JWT_REFRESH_EXPIRES_IN` (default `7d`)
-- `JWT_EMAIL_VERIFICATION_SECRET`
-- `JWT_PASSWORD_RESET_SECRET`
+- JWT settings
+  - JWT_SECRET
+  - JWT_REFRESH_SECRET
+  - JWT_ACCESS_EXPIRES_IN
+  - JWT_REFRESH_EXPIRES_IN
+  - JWT_EMAIL_VERIFICATION_SECRET
+  - JWT_PASSWORD_RESET_SECRET
 
-### CORS
-- `ALLOWED_ORIGINS` (default `http://localhost:3000`)
+- Application URLs and CORS
+  - ALLOWED_ORIGINS
+  - APP_CLIENT_URL
+  - APP_API_URL
 
-### Email (SMTP)
-- `EMAIL_HOST`
-- `EMAIL_PORT` (default `587`)
-- `EMAIL_SERVICE_USER`
-- `EMAIL_SERVICE_PASS`
+- Mail settings
+  - EMAIL_HOST
+  - EMAIL_PORT
+  - EMAIL_SERVICE_USER
+  - EMAIL_SERVICE_PASS
 
-### App URLs
-- `APP_CLIENT_URL` (frontend base; used in email links)
-- `APP_API_URL`
+- Cloud storage placeholders
+  - CLOUDINARY_CLOUD_NAME
+  - CLOUDINARY_API_KEY
+  - CLOUDINARY_API_SECRET
 
-### Cloudinary (declared in env schema)
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
+The app will fail fast if critical env values are missing or malformed.
 
 ---
 
-## Auth Module (End-to-End)
+## 7. Helpers and shared utilities
 
-Auth is split into:
-- **Routes**: `src/modules/auth/authRoutes.js`
-- **Controller**: `src/modules/auth/authController.js`
-- **Service**: `src/modules/auth/authService.js`
-- **Validation**: `src/modules/auth/authValidation.js`
-- **Token generation**: `src/utils/tokenUtils.js`
+The shared utilities layer keeps the codebase consistent and reusable.
 
-### Token strategy
+### Token utilities
+- [src/shared/utils/tokenUtils.js](src/shared/utils/tokenUtils.js) generates access tokens, refresh tokens, email verification tokens, and password-reset tokens.
 
-The system issues:
-- **Access token**
-  - JWT signed with `env.JWT_SECRET`
-  - includes payload: `userId`, `role`, `email`
-  - expiry: `env.JWT_ACCESS_EXPIRES_IN` (default `15m`)
+### Password utilities
+- [src/shared/utils/passwordUtil.js](src/shared/utils/passwordUtil.js) handles password hashing and comparison using bcrypt.
 
-- **Refresh token**
-  - JWT signed with `env.JWT_REFRESH_SECRET`
-  - expiry: `env.JWT_REFRESH_EXPIRES_IN` (default `7d`)
-  - additionally stored in Redis:
-    - key: `refresh:${userId}`
-    - TTL: 7 days
+### Response helpers
+- [src/shared/utils/ApiResponse.js](src/shared/utils/ApiResponse.js) standardizes success, error, and paginated responses.
 
-- **Blocklist for access tokens** (hardening)
-  - old access tokens are added to:
-    - key: `blocklist:${accessToken}`
-    - TTL: remaining TTL of that access token
-  - checked in `authenticateMiddleware.js`
+### Error handling
+- [src/shared/utils/AppError.js](src/shared/utils/AppError.js) contains custom application errors with consistent status codes.
 
-### Routes & behaviors
+### QR and utility helpers
+- [src/shared/utils/helpers.js](src/shared/utils/helpers.js) includes QR token generation, event code generation, TOTP generation/verification, and utility helpers for emails and phone numbers.
 
-Base: `/api/v1/auth` (mounted under `/api/v1` in `src/routes/index.js`)
+### Logging
+- [src/infra/logs/logger.js](src/infra/logs/logger.js) uses Winston and writes to the console plus log files for combined, error, exception, and rejection events.
 
-#### Public routes
+---
 
-1) `POST /auth/register`
-- Validated by `registerSchema` (Zod)
-- Creates user (soft-delete restore supported)
-- Sends email verification email
-- Returns:
-  - `accessToken`
-  - refresh token (also set by controller as httpOnly cookie after login only; register currently returns refreshToken in response from service)
+## 8. Authentication module
 
-2) `POST /auth/login`
-- Validated by `loginSchema`
-- Rate-limited by `loginLimiter`
-- Returns:
-  - `accessToken`
-- Sets cookie:
-  - cookie name: `refreshToken`
-  - `httpOnly: true`
-  - `secure` only in production
-  - `sameSite: strict`
-  - `maxAge: 7d`
+The auth flow is organized across:
 
-3) `POST /auth/refresh`
-- Reads refresh token from cookies (`req.cookies?.refreshToken`)
-- Reads old access token from `Authorization` header
-- Verifies refresh token signature
-- Confirms refresh token matches Redis stored token
-- Rotates refresh token in Redis
-- If old access token is provided, it is blocklisted until expiry
+- [src/modules/auth/authRoutes.js](src/modules/auth/authRoutes.js)
+- [src/modules/auth/authController.js](src/modules/auth/authController.js)
+- [src/modules/auth/authService.js](src/modules/auth/authService.js)
+- [src/modules/auth/authValidation.js](src/modules/auth/authValidation.js)
+
+### Supported auth actions
+
+- Register a user
+- Log in and receive access/refresh tokens
+- Refresh tokens using the refresh cookie and old access token
+- Logout and invalidate the user session
+- Retrieve the current profile
+- Update profile information
+- Change password
+- Request a reset link
+- Reset password with a token
+- Delete an account (soft-delete flow)
+
+### Auth security behavior
+
+- Refresh tokens are stored in Redis and rotated on refresh.
+- Old access tokens are blocklisted until expiry after logout or refresh.
+- Login attempts are rate-limited.
+- Authenticated actions require the bearer token middleware.
+
+---
+
+## 9. Events, guests, and QR verification
+
+### Event module
+The event module is handled by [src/modules/events/eventService.js](src/modules/events/eventService.js) and [src/modules/events/eventController.js](src/modules/events/eventController.js).
+
+Supported flows include:
+- Create a new event with a generated event code
+- List events for the authenticated host
+- Read event details and stats
+- Update event information
+- Publish/start/end/delete event status transitions
+- View capacity and dashboard data
+
+### Guest module
+The guest module is handled by [src/modules/guests/guestService.js](src/modules/guests/guestService.js) and [src/modules/guests/GuestController.js](src/modules/guests/GuestController.js).
+
+Supported flows include:
+- Invite a guest to an event
+- Bulk invite a list of guests
+- List guests for an event
+- Update RSVP status
+- Queue invitation emails for delivery
+
+### QR verification and gate check-in
+The QR verification workflow is handled by [src/modules/verification/verifyController.js](src/modules/verification/verifyController.js) and [src/orchestration/QRVerificationWorkflow.js](src/orchestration/QRVerificationWorkflow.js).
+
+Key capabilities:
+- Validate a one-time check-in token
+- Verify a time-based QR code using TOTP logic
+- Prevent duplicate scans and double check-ins
+- Create an audit check-in record for successful scans
+- Emit structured logs for successful and rejected check-ins
+
+---
+
+## 10. Email sending and async workers
+
+The email pipeline is built for reliability and separation of concerns.
+
+### Email transport
+
+- [src/infra/email/emailService.js](src/infra/email/emailService.js) owns the SMTP transport layer.
+- Mail delivery is centralized so other modules can send mail without directly touching SMTP details.
+
+### Queue layer
+
+- [src/infra/queues/emailQueue.js](src/infra/queues/emailQueue.js) creates a BullMQ queue named `email`.
+- The queue uses Redis-backed job persistence and retry strategy.
+
+### Worker layer
+
+- [src/infra/queues/workers/emailWorker.js](src/infra/queues/workers/emailWorker.js) processes jobs for:
+  - verification emails
+  - password reset emails
+  - account deletion emails
+  - invitation emails
+
+### Job behavior
+
+- Jobs support retries with exponential backoff.
+- Queue failures and worker failures are logged.
+- Invitation emails are queued as soon as guest invitations are created.
+
+---
+
+## 11. Logging and observability
+
+Structured logging was added to make the platform easier to debug and monitor in development and production.
+
+### Current log coverage
+
+- User registration and restoration
+- User deletion
+- Authentication failures and successful auth
+- Event creation
+- Invitation sending and queueing
+- QR check-in success and rejection
+- Worker job completion and failure
+- Queue retry attempts
+
+### Log destinations
+
+- Console output
+- [logs/combined.log](logs/combined.log)
+- [logs/error.log](logs/error.log)
+- [logs/exceptions.log](logs/exceptions.log)
+- [logs/rejections.log](logs/rejections.log)
+
+---
+
+## 12. Dockerization
+
+The application is fully containerized for local development and service orchestration.
+
+### Containers
+
+- API service
+- Email worker service
+- PostgreSQL service
+- Redis service
+- Prisma Studio service
+- NGINX service
+
+### Docker Compose setup
+
+The main compose file is [docker/docker-compose.yml](docker/docker-compose.yml).
+
+It exposes:
+
+- API at http://localhost:5003
+- Prisma Studio at http://localhost:5555
+- NGINX at http://localhost:80
+- PostgreSQL at localhost:5432
+- Redis at localhost:6379
+
+### Dockerfiles
+
+- [docker/Dockerfile.api](docker/Dockerfile.api)
+- [docker/Dockerfile.worker](docker/Dockerfile.worker)
+
+### Typical startup
+
+```bash
+cd Backend
+cp .env.example .env
+docker compose -f docker/docker-compose.yml up --build
+```
+
+---
+
+## 13. Local development
+
+### Install dependencies
+
+```bash
+cd Backend
+npm install
+```
+
+### Generate Prisma client
+
+```bash
+npm run generate
+```
+
+### Start the API locally
+
+```bash
+npm run dev
+```
+
+### Start the email worker
+
+The worker is started via Docker Compose in the main stack, but it can also be launched from the worker entrypoint when required by the runtime environment.
+
+---
+
+## 14. Troubleshooting
+
+### Prisma issues
+
+- Run `npx prisma generate` if the Prisma client is missing or outdated.
+- Run `npx prisma migrate deploy` if migrations have not been applied.
+
+### Redis or queue issues
+- Ensure Redis is reachable from the API and worker containers.
+- Review queue and worker logs when jobs fail to process.
+
+### Auth issues
+- Check that the JWT secrets are populated in the environment file.
+- Confirm the access token is sent in the `Authorization: Bearer ...` header.
+
+### Docker issues
+- Ensure ports 5003, 5432, 6379, 5555, and 80 are free.
+- Rebuild containers when dependency or Dockerfile changes are made.
+
+---
+
+## 15. API reference note
+
+The API base path is `/api/v1`.
+
+For a full endpoint-by-endpoint request body and header reference, see [REQUEST_BODIES.md](REQUEST_BODIES.md).
+
 - Returns:
   - new `accessToken`
   - new `refreshToken`

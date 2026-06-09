@@ -1,5 +1,6 @@
 import { BaseService } from "../../shared/base/BaseService.js";
-import { AppError } from "../utils/AppError.js";
+import { AppError } from "../../shared/utils/AppError.js";
+
 
 export class GuestService extends BaseService {
   constructor(prisma) {

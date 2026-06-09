@@ -1,4 +1,4 @@
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../shared/utils/ApiResponse.js";
 
 export const notFoundHandler = (req, res) => {
   return ApiResponse.notFound(

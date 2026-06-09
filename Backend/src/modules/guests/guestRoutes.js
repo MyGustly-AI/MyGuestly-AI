@@ -1,11 +1,12 @@
 import express from "express";
 import guestController from "./GuestController.js";
-import { authMiddleware, authorize } from "../../../authMiddleware.js";
+import { authenticate as authMiddleware } from "../../middlewares/authenticateMiddleware.js";
+import { authorize } from "../../middlewares/authorizeMiddleware.js";
 import {
   validateRequest,
   validateQuery,
   guestSchemas,
-} from "../utils/validationSchemas.js";
+} from "../../shared/utils/validationSchemas.js";
 
 const router = express.Router({ mergeParams: true });
 

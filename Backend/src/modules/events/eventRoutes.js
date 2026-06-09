@@ -8,8 +8,8 @@ import eventController from "./eventController.js";
 import guestRoutes from "../guests/guestRoutes.js";
 import { authorize } from "../../middlewares/authorizeMiddleware.js";
 import { authenticate } from "../../middlewares/authenticateMiddleware.js";
-import { validateRequest, validateQuery } from "../../utils/validationSchemas.js";
-import { eventSchemas } from "../../utils/validationSchemas.js";
+import { validateRequest, validateQuery } from "../../shared/utils/validationSchemas.js";
+import { eventSchemas } from "../../shared/utils/validationSchemas.js";
 
 const router = express.Router();
 

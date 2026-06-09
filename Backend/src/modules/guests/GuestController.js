@@ -1,11 +1,12 @@
 import { BaseController } from "../../shared/base/BaseController.js";
 import { GuestService } from "./guestService.js";
 import { EventService } from "../events/eventService.js";
-import { AppError } from "../utils/AppError.js";
-import { prisma } from "../utils/prisma.js";
-import { emailQueue } from "../utils/emailQueue.js";
+import { AppError } from "../../shared/utils/AppError.js";
+import { prisma } from "../../shared/utils/prisma.js";
+import { emailQueue } from "../../infra/queues/emailQueue.js";
 import QRCode from "qrcode";
 import env from "../../config/env.js";
+import { logger } from "../../infra/logs/logger.js";
 
 const BASE_URL = env.APP_URL;
 
@@ -96,7 +97,21 @@ class GuestController extends BaseController {
           { attempts: 3, backoff: { type: "exponential", delay: 60000 } },
         );
         mailResult = { enqueued: true, jobId: job.id };
+        logger.info("Invitation email job queued", {
+          eventId: event.id,
+          guestId: guest.id,
+          invitationId: invitationRecord.id,
+          guestEmail: guest.email,
+          jobId: job.id,
+        });
       } catch (err) {
+        logger.error("Failed to enqueue invitation email", {
+          eventId: event.id,
+          guestId: guest.id,
+          invitationId: invitationRecord?.id,
+          guestEmail: guest.email,
+          error: err?.message || err,
+        });
         console.error(
           "Failed to enqueue invitation email:",
           err?.message || err,
@@ -156,7 +171,16 @@ class GuestController extends BaseController {
             },
             { attempts: 3, backoff: { type: "exponential", delay: 60000 } },
           );
+          logger.info("Bulk invitation email job queued", {
+            eventId: event.id,
+            guestEmail: g.email,
+          });
         } catch (err) {
+          logger.error("Failed to enqueue bulk invitation email", {
+            eventId: event.id,
+            guestEmail: g.email,
+            error: err?.message || err,
+          });
           console.error(
             "Failed to enqueue bulk invitation email:",
             err?.message || err,
