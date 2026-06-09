@@ -1,30 +1,27 @@
-import pkg from "bullmq";
+import { emailQueue } from "../emailQueue.js";
+import { logger } from "../../logs/logger.js";
 
-const B = pkg.default || pkg;
-const Queue = B.Queue;
-let QueueScheduler =
-  B.QueueScheduler || (B.default && B.default.QueueScheduler);
-import env from "../config/env.js";
+export const EmailJobs = {
+    sendInvitation(data) {
+        logger.info("Invitation email job queued", {
+            invitationId: data?.invitationId,
+            eventId: data?.event?.id || data?.eventId,
+            guestEmail: data?.guest?.email,
+            jobName: "send_invitation",
+        });
+        return emailQueue.add("send_invitation", data);
+    },
 
-const connection = {
-  connection: { url: env.REDIS_URL || "redis://127.0.0.1:6379" },
+    sendVerification(data) {
+        return emailQueue.add("send_verification", data);
+    },
+
+    sendPasswordReset(data) {
+        return emailQueue.add("send_password_reset", data);
+    },
+
+    sendAccountDeleted(data) {
+        return emailQueue.add("send_account_deleted", data);
+    },
 };
 
-// Ensure scheduler is running for delayed jobs / retries — be tolerant to different export shapes
-let scheduler = null;
-try {
-  if (QueueScheduler) {
-    scheduler = new QueueScheduler("email", connection);
-  } else {
-    console.warn(
-      "QueueScheduler not available from bullmq; delayed jobs/retries may be limited.",
-    );
-  }
-} catch (err) {
-  console.warn("Failed to initialize QueueScheduler:", err?.message || err);
-  scheduler = null;
-}
-
-const emailQueue = new Queue("email", connection);
-
-export { emailQueue, scheduler, connection };

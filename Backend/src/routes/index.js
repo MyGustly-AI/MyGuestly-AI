@@ -9,7 +9,7 @@ const router = Router();
 
 import authRoutes from "../modules/auth/authRoutes.js";
 import eventRoutes from "../modules/events/eventRoutes.js";
-import verifyController from "../controllers/VerifyController.js";
+import verifyController from "../modules/verification/VerifyController.js";
 
 router.use("/auth", authRoutes); // Authentication routes for user registration, login, token refresh, and logout
 router.use("/events", eventRoutes); // Event routes for managing guest events, RSVPs, and related operations

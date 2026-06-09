@@ -1,4 +1,4 @@
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../shared/utils/ApiResponse.js";
 
 export const authorize = (...roles) => {
   return (req, res, next) => {

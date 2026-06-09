@@ -2,10 +2,12 @@ import jwt from "jsonwebtoken";
 import env from "../../config/env.js";
 import prisma from "../../config/prisma.js";
 import { redis } from "../../config/redis.js";
-import {hashPassword, comparePassword} from "../../utils/passwordUtil.js";
-import {generateAccessToken, generateRefreshToken, generateEmailVerificationToken, generatePasswordResetToken} from "../../utils/tokenUtils.js";
-import { AppError } from "../../utils/AppError.js";
-import emailService from "../../services/emailService.js";
+import { hashPassword, comparePassword } from "../../shared/utils/passwordUtil.js";
+import {generateAccessToken, generateRefreshToken, generateEmailVerificationToken, generatePasswordResetToken} from "../../shared/utils/tokenUtils.js";
+import { RegistrationWorkflow } from "../../orchestration/RegistrationWorkflow.js";
+import { AppError } from "../../shared/utils/AppError.js";
+import { EmailJobs } from "../../infra/queues/jobs/emailJobs.js";
+import { logger } from "../../infra/logs/logger.js";
 
 
 // Registration service to create new user and generate tokens
@@ -14,12 +16,19 @@ export const registerUser = async (payload) => {
         where: { email: payload.email },
     });
 
+    let user;
+    let isRestored = false;
+
     if (existingUser) {
-        // Soft deleted account — allow re-registration by restoring it
         if (existingUser.deletedAt) {
             const hashedPassword = await hashPassword(payload.password);
 
-            const user = await prisma.user.update({
+            logger.info("User account restored", {
+                userEmail: payload.email,
+                previousDeletedAt: existingUser.deletedAt,
+            });
+
+            user = await prisma.user.update({
                 where: { email: payload.email },
                 data: {
                     fullName: payload.fullName,
@@ -30,74 +39,48 @@ export const registerUser = async (payload) => {
                 },
             });
 
-            // Send fresh verification email
-            const verificationToken = generateEmailVerificationToken(user);
-            await emailService.sendVerificationEmail({
-                to: user.email,
-                fullName: user.fullName,
-                token: verificationToken,
-            });
-
-            // Generate JWT access tokens for the authenticated user
-            const accessToken = generateAccessToken(user);
-
-            // Generate JWT refresh token and store in Redis with expiration
-            const refreshToken = generateRefreshToken(user);
-
-            // Store refresh token in Redis with expiration
-            await redis.set(
-                `refresh:${user.id}`,
-                refreshToken,
-                "EX",
-                60 * 60 * 24 * 7
-            );
-
-            return {
-                user: {
-                    id: user.id,
-                    fullName: user.fullName,
-                    email: user.email,
-                    phone: user.phone,
-                    role: user.role,
-                    isVerified: user.isVerified,
-                    avatarUrl: user.avatarUrl,
-                },
-                accessToken,
-                refreshToken,
-            };
+            isRestored = true;
+        } else {
+            throw AppError.conflict("Email already exists");
         }
+    } else {
+        const hashedPassword = await hashPassword(payload.password);
 
-        // Active account — reject with conflict
-        throw AppError.conflict("Email already exists");
+        user = await prisma.user.create({
+            data: {
+                fullName: payload.fullName,
+                email: payload.email,
+                phone: payload.phone,
+                password: hashedPassword,
+            },
+        });
+
+        logger.info("User registered", {
+            userId: user.id,
+            email: user.email,
+        });
     }
 
-    // Hash password
-    const hashedPassword = await hashPassword(payload.password);
+    // Event handling layer for new and existing users
+    if (isRestored) {
+        logger.info("User restoration workflow started", {
+            userId: user.id,
+            email: user.email,
+        });
+        await RegistrationWorkflow.handleUserRestored(user);
+    } else {
+        logger.info("User registration workflow started", {
+            userId: user.id,
+            email: user.email,
+        });
+        await RegistrationWorkflow.handleUserRegistered(user);
+    }
 
-    const user = await prisma.user.create({
-        data: {
-            fullName: payload.fullName,
-            email: payload.email,
-            phone: payload.phone,
-            password: hashedPassword,
-        },
-    });
-
-    // Generate email verification token and send verification email to new user
-    const verificationToken = generateEmailVerificationToken(user);
-    await emailService.sendVerificationEmail({
-        to: user.email,
-        fullName: user.fullName,
-        token: verificationToken,
-    });
-
-    // Generate JWT access tokens for the authenticated user
     const accessToken = generateAccessToken(user);
-
-    // Generate JWT refresh token and store in Redis with expiration
     const refreshToken = generateRefreshToken(user);
 
-    // Store refresh token in Redis with expiration
+    await redis.del(`refresh:${user.id}`);
+
     await redis.set(
         `refresh:${user.id}`,
         refreshToken,
@@ -106,20 +89,11 @@ export const registerUser = async (payload) => {
     );
 
     return {
-        user: {
-            id: user.id,
-            fullName: user.fullName,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            isVerified: user.isVerified,
-            avatarUrl: user.avatarUrl,
-        },
+        user,
         accessToken,
         refreshToken,
     };
 };
-
 
 
 
@@ -167,17 +141,31 @@ export const loginUser = async (payload) => {
         });
         
         if (!user) {
+        logger.warn("Authentication failed", {
+            reason: "user_not_found",
+            email: payload.email,
+        });
         throw AppError.unauthorized("Invalid credentials");
     }
 
     // Reject login if account has been soft deleted
     if (user.deletedAt) {
+        logger.warn("Authentication failed", {
+            reason: "account_deleted",
+            userId: user.id,
+            email: user.email,
+        });
         throw AppError.unauthorized("Invalid credentials");
     }
 
     const validPassword = await comparePassword(payload.password, user.password);
 
     if (!validPassword) {
+        logger.warn("Authentication failed", {
+            reason: "invalid_password",
+            userId: user.id,
+            email: user.email,
+        });
         throw AppError.unauthorized("Invalid credentials");
     }
 
@@ -194,6 +182,11 @@ export const loginUser = async (payload) => {
         "EX",
         60 * 60 * 24 * 7
     );
+
+    logger.info("User authenticated", {
+        userId: user.id,
+        email: user.email,
+    });
 
     return {
         user: {
@@ -228,6 +221,10 @@ export const refreshUserToken = async (refreshToken, oldAccessToken) => {
     const storedToken = await redis.get(`refresh:${decoded.userId}`);
 
     if (!storedToken || storedToken !== refreshToken) {
+        logger.warn("Authentication failed", {
+            reason: "invalid_refresh_token",
+            userId: decoded?.userId,
+        });
         throw AppError.unauthorized("Invalid refresh token");
     }
 
@@ -411,7 +408,7 @@ export const forgotPassword = async (email) => {
     const resetToken = generatePasswordResetToken(user);
 
     // Send password reset email with tokenized URL
-    await emailService.sendPasswordResetEmail({
+    await EmailJobs.sendPasswordReset({
         to: user.email,
         fullName: user.fullName,
         token: resetToken,
@@ -468,10 +465,22 @@ export const deleteUserAccount = async (userId) => {
         data: { deletedAt: new Date() },
     });
 
+    logger.info("User account deleted", {
+        userId,
+        email: user.email,
+    });
+
     // Fire and forget account deletion email
-    emailService.sendAccountDeletedEmail({
+    await EmailJobs.sendAccountDeleted({
         to: user.email,
         fullName: user.fullName,
-    }).catch((err) => console.error("Failed to send deletion email:", err));
+    }
+).catch((err) => {
+    logger.error("Failed to send deletion email", {
+        userId,
+        email: user.email,
+        error: err?.message || err,
+    });
+});
     return true;
 };

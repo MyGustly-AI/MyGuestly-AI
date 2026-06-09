@@ -4,8 +4,9 @@
  */
 
 import { BaseService } from "../../shared/base/BaseService.js";
-import { AppError } from "../../utils/AppError.js";
-import { QRUtil } from "../../utils/helpers.js";
+import { AppError } from "../../shared/utils/AppError.js";
+import { QRUtil } from "../../shared/utils/helpers.js";
+import { logger } from "../../infra/logs/logger.js";
 
 export class EventService extends BaseService {
   constructor(prisma) {
@@ -31,6 +32,12 @@ export class EventService extends BaseService {
         ...eventData,
         eventCode,
         status: "DRAFT",
+      });
+
+      logger.info("Event created", {
+        eventId: event.id,
+        hostId: event.hostId,
+        eventCode,
       });
 
       return this.formatEventResponse(event);

@@ -1,77 +1,173 @@
 import { Worker } from "bullmq";
-import { emailQueue, connection } from "./emailQueue.js";
-import EmailService from "./emailService.js";
-import resendService from "./resendService.js";
-import { prisma } from "../../../shared/utils/prisma.js";
-import env from "../config/env.js";
+import { connection } from "../emailQueue.js";
+import EmailService from "../../email/emailService.js";
+import {
+  verificationTemplate,
+  passwordResetTemplate,
+  accountDeletedTemplate,
+  invitationTemplate,
+} from "../../email/emailTemplates.js";
+import { generateTicketPDF } from "../../email/ticketGenerator.js";
+import { logger } from "../../logs/logger.js";
 
-// Worker to process email jobs
-const worker = new Worker(
-  "email",
-  async (job) => {
-    const data = job.data || {};
-    const {
-      guest,
-      event,
-      invitationLink,
-      qrImageBase64,
-      invitationId,
-      hostId,
-    } = data;
+export function startEmailWorker() {
+  const worker = new Worker(
+    "email",
+    async (job) => {
+      switch (job.name) {
+        case "send_verification":
+          return handleVerification(job.data);
 
-    // Try Resend first if configured, fallback to EmailService
-    try {
-      if (env.RESEND_API_KEY) {
-        const result = await resendService.sendInvitation({
-          guest,
-          event,
-          invitationLink,
-          qrBase64: qrImageBase64,
-        });
-        if (invitationId) {
-          await prisma.invitation.update({
-            where: { id: invitationId },
-            data: { sentAt: new Date(), sentBy: hostId },
-          });
-        }
-        return result;
+        case "send_password_reset":
+          return handlePasswordReset(job.data);
+
+        case "send_account_deleted":
+          return handleAccountDeleted(job.data);
+
+        case "send_invitation":
+          return handleInvitation(job.data);
+
+        default:
+          throw new Error(`Unknown email job: ${job.name}`);
       }
-    } catch (err) {
-      console.warn(
-        "Resend send failed, falling back to EmailService:",
-        err?.message || err,
-      );
+    },
+    {
+      connection,
+      concurrency: 10,
+    }
+  );
+
+  worker.on("completed", (job) => {
+    logger.info("Email job completed", {
+      jobId: job.id,
+      jobName: job.name,
+    });
+    console.log(`Email sent successfully | Job: ${job.id}`);
+  });
+
+  worker.on("failed", (job, err) => {
+    logger.error("Email job failed", {
+      jobId: job?.id,
+      jobName: job?.name,
+      error: err?.message || err,
+    });
+    console.error(`Email failed | Job: ${job?.id}`, err.message);
+  });
+
+  worker.on("error", (err) => {
+    logger.error("Email worker error", {
+      error: err?.message || err,
+    });
+    console.error("Email Worker Error:", err);
+  });
+
+  logger.info("Email worker started", { queueName: "email" });
+  console.log("Email Worker started");
+
+  return worker;
+}
+
+// Verification email handler
+async function handleVerification(data) {
+    const template = verificationTemplate(data);
+
+    const result = await EmailService.sendMail({
+        to: data.to,
+        subject: template.subject,
+        html: template.html,
+    });
+
+    logger.info("Verification email sent", {
+        to: data.to,
+    });
+
+    return result;
+}
+
+// Password reset email handler
+async function handlePasswordReset(data) {
+    const template = passwordResetTemplate(data);
+
+    const result = await EmailService.sendMail({
+        to: data.to,
+        subject: template.subject,
+        html: template.html,
+    });
+
+    logger.info("Password reset email sent", {
+        to: data.to,
+    });
+
+    return result;
+}
+
+// Account deletion email handler
+async function handleAccountDeleted(data) {
+    const template = accountDeletedTemplate(data);
+
+    const result = await EmailService.sendMail({
+        to: data.to,
+        subject: template.subject,
+        html: template.html,
+    });
+
+    logger.info("Account deletion email sent", {
+        to: data.to,
+    });
+
+    return result;
+}
+
+// Event invitation email handler
+async function handleInvitation(data) {
+    const {guest, event, invitationLink, qrImageBase64,} = data;
+
+    const template = invitationTemplate({
+            guest,
+            event,
+            invitationLink,
+        });
+
+    let attachments = [];
+
+    if (qrImageBase64) {
+        const pdf =
+            await generateTicketPDF({
+                guest,
+                event,
+                qrImageBase64,
+            });
+
+        attachments.push({
+            filename: "ticket.pdf",
+            content: pdf,
+            contentType:
+                "application/pdf",
+        });
+
+        attachments.push({
+            filename: "qrcode.png",
+            content: Buffer.from(
+                qrImageBase64,
+                "base64"
+            ),
+            contentType: "image/png",
+        });
     }
 
-    // Fallback to nodemailer-based EmailService
-    try {
-      const mailResult = await EmailService.sendInvitation({
-        guest,
-        event,
-        invitationLink,
-        qrImageBase64,
-      });
-      if (invitationId) {
-        await prisma.invitation.update({
-          where: { id: invitationId },
-          data: { sentAt: new Date(), sentBy: hostId },
-        });
-      }
-      return mailResult;
-    } catch (err) {
-      // bubble error so Bull can retry according to attempts/backoff
-      throw err;
-    }
-  },
-  { connection, concurrency: 5 },
-);
+    const result = await EmailService.sendMail({
+        to: guest.email,
+        subject: template.subject,
+        html: template.html,
+        attachments,
+    });
 
-worker.on("completed", (job) => {
-  console.info(`Email job ${job.id} completed`);
-});
+    logger.info("Invitation sent", {
+        invitationId: data.invitationId,
+        eventId: event?.id,
+        guestEmail: guest.email,
+    });
 
-worker.on("failed", (job, err) => {
-  console.error(`Email job ${job?.id} failed:`, err?.message || err);
-});
+    return result;
+}
 
-export default worker;

@@ -1,7 +1,8 @@
-import { BaseController } from "./BaseController.js";
-import { prisma } from "../utils/prisma.js";
-import { QRUtil } from "../utils/helpers.js";
-import { AppError } from "../utils/AppError.js";
+import { BaseController } from "../../shared/base/BaseController.js";
+import { prisma } from "../../shared/utils/prisma.js"
+import { QRUtil } from "../../shared/utils/helpers.js";
+import { AppError } from "../../shared/utils/AppError.js";
+import { logger } from "../../infra/logs/logger.js";
 
 class VerifyController extends BaseController {
   constructor() {
@@ -18,16 +19,28 @@ class VerifyController extends BaseController {
     const { totp } = req.body;
     const ip = req.ip || req.headers["x-forwarded-for"] || null;
 
-    if (!token) return this.badRequest(res, "Missing token");
-    if (!totp) return this.badRequest(res, "Missing totp code");
+    if (!token) {
+      logger.warn("QR check-in rejected", { reason: "missing_token", ip });
+      return this.badRequest(res, "Missing token");
+    }
+    if (!totp) {
+      logger.warn("QR check-in rejected", { reason: "missing_totp", token, ip });
+      return this.badRequest(res, "Missing totp code");
+    }
 
     // Find invitation
     const invitation = await prisma.invitation.findUnique({ where: { token } });
-    if (!invitation) return this.notFound(res, "Invitation not found");
+    if (!invitation) {
+      logger.warn("QR check-in rejected", { reason: "invitation_not_found", token, ip });
+      return this.notFound(res, "Invitation not found");
+    }
 
     // Verify TOTP using invitation.token as secret
     const ok = QRUtil.verifyTOTP(invitation.token, String(totp));
-    if (!ok) return this.badRequest(res, "Invalid or expired code");
+    if (!ok) {
+      logger.warn("QR check-in rejected", { reason: "invalid_totp", guestId: invitation.guestId, eventId: invitation.eventId, ip });
+      return this.badRequest(res, "Invalid or expired code");
+    }
 
     // Atomic check-in: only set checkedIn if currently false
     try {
@@ -64,6 +77,13 @@ class VerifyController extends BaseController {
           );
         }
 
+        logger.warn("QR check-in rejected", {
+          reason: "already_checked_in",
+          guestId,
+          eventId: invitation.eventId,
+          ip,
+        });
+
         return this.badRequest(
           res,
           "This code has already been used (possible fraud)",
@@ -84,11 +104,22 @@ class VerifyController extends BaseController {
         console.warn("CheckIn creation warning:", err?.message || err);
       }
 
+      logger.info("QR check-in successful", {
+        guestId,
+        eventId: invitation.eventId,
+        ip,
+      });
+
       return this.success(res, "Check-in successful", {
         guestId,
         eventId: invitation.eventId,
       });
     } catch (error) {
+      logger.error("QR check-in failed", {
+        token,
+        ip,
+        error: error?.message || error,
+      });
       throw AppError.internalError("Check-in failed");
     }
   });
