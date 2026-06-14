@@ -166,6 +166,7 @@ export const mediaSchemas = {
   upload: Joi.object({
     mediaType: Joi.string().valid("IMAGE", "VIDEO").required(),
     url: Joi.string().uri().required(),
+    publicId: Joi.string().optional(),
     caption: Joi.string().max(500).optional(),
   }),
 

@@ -6,6 +6,8 @@
 import express from "express";
 import eventController from "./eventController.js";
 import guestRoutes from "../guests/guestRoutes.js";
+import mediaRoutes from "../media/mediaRoutes.js";
+import memoryRoutes from "../memories/memoryRoutes.js";
 import { authorize } from "../../middlewares/authorizeMiddleware.js";
 import { authenticate } from "../../middlewares/authenticateMiddleware.js";
 import { validateRequest, validateQuery } from "../../shared/utils/validationSchemas.js";
@@ -107,6 +109,12 @@ router.delete(
 
 // Nested guest routes for the invitation module
 router.use("/:eventId/guests", guestRoutes);
+
+// Nested media routes
+router.use("/:eventId/media", mediaRoutes);
+
+// Nested memory routes
+router.use("/:eventId/memories", memoryRoutes);
 
 /**
  * GET /events/:eventId/capacity

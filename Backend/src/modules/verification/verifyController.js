@@ -3,6 +3,7 @@ import { prisma } from "../../shared/utils/prisma.js"
 import { QRUtil } from "../../shared/utils/helpers.js";
 import { AppError } from "../../shared/utils/AppError.js";
 import { logger } from "../../infra/logs/logger.js";
+import { getIO } from "../../infra/socket.js";
 
 class VerifyController extends BaseController {
   constructor() {
@@ -42,19 +43,51 @@ class VerifyController extends BaseController {
       return this.badRequest(res, "Invalid or expired code");
     }
 
-    // Atomic check-in: only set checkedIn if currently false
+    // Atomic check-in: Try to create CheckIn record (guestId is @unique)
     try {
       const guestId = invitation.guestId;
 
-      // Use updateMany to perform a conditional update (atomic at DB level)
-      const result = await prisma.guest.updateMany({
-        where: { id: guestId, checkedIn: false },
-        data: { checkedIn: true, checkInTime: new Date() },
+      await prisma.checkIn.create({
+        data: {
+          guestId,
+          eventId: invitation.eventId,
+          checkedByIp: ip,
+        },
       });
 
-      if (result.count === 0) {
+      // Update invitation status to CHECKED_IN
+      await prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { status: "CHECKED_IN" }
+      });
+
+      // Emit real-time update
+      try {
+        const io = getIO();
+        io.to(`event:${invitation.eventId}`).emit("guestCheckedIn", {
+          guestId,
+          eventId: invitation.eventId,
+          checkedAt: new Date(),
+        });
+      } catch (err) {
+        logger.warn("Socket emission failed", { err: err?.message || err });
+      }
+
+      logger.info("QR check-in successful", {
+        guestId,
+        eventId: invitation.eventId,
+        ip,
+      });
+
+      return this.success(res, "Check-in successful", {
+        guestId,
+        eventId: invitation.eventId,
+      });
+    } catch (error) {
+      // P2002 is Prisma's unique constraint violation error code
+      if (error.code === "P2002") {
         // Guest already checked in -> fraud / double-scan
-        // Optionally create a notification for the host
+        // Create a notification for the host
         try {
           const event = await prisma.event.findUnique({
             where: { id: invitation.eventId },
@@ -71,50 +104,26 @@ class VerifyController extends BaseController {
             });
           }
         } catch (err) {
-          console.error(
-            "Failed to create duplicate-scan notification:",
-            err?.message || err,
-          );
+          logger.error("Failed to create duplicate-scan notification:", err?.message || err);
         }
 
         logger.warn("QR check-in rejected", {
           reason: "already_checked_in",
-          guestId,
+          guestId: invitation.guestId,
           eventId: invitation.eventId,
           ip,
         });
 
-        return this.badRequest(
-          res,
-          "This code has already been used (possible fraud)",
-        );
+        return this.badRequest(res, "This code has already been used (possible fraud)");
       }
 
-      // Create a CheckIn record (guestId unique)
-      try {
-        await prisma.checkIn.create({
-          data: {
-            guestId,
-            eventId: invitation.eventId,
-            checkedByIp: ip,
-          },
-        });
-      } catch (err) {
-        // If CheckIn creation fails due to unique constraint, ignore — guest was checked in above
-        console.warn("CheckIn creation warning:", err?.message || err);
-      }
-
-      logger.info("QR check-in successful", {
-        guestId,
-        eventId: invitation.eventId,
+      logger.error("QR check-in failed", {
+        token,
         ip,
+        error: error?.message || error,
       });
-
-      return this.success(res, "Check-in successful", {
-        guestId,
-        eventId: invitation.eventId,
-      });
-    } catch (error) {
+      throw AppError.internalError("Check-in failed");
+    }
       logger.error("QR check-in failed", {
         token,
         ip,

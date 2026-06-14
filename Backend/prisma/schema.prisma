@@ -203,6 +203,8 @@ model Media {
   duration     Float?
   voiceNoteUrl String?
   metadata     Json?
+  aiStatus     AIProcessingStatus @default(PENDING)
+  
   createdAt    DateTime  @default(now())
 
   eventId    String
@@ -329,4 +331,11 @@ enum NotificationType {
   EVENT_REMINDER
   MEDIA_UPLOADED
   QR_SCANNED
+}
+
+// ai part:
+enum AIProcessingStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
