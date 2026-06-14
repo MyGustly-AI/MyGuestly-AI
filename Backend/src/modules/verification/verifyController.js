@@ -124,13 +124,6 @@ class VerifyController extends BaseController {
       });
       throw AppError.internalError("Check-in failed");
     }
-      logger.error("QR check-in failed", {
-        token,
-        ip,
-        error: error?.message || error,
-      });
-      throw AppError.internalError("Check-in failed");
-    }
   });
 }
 
