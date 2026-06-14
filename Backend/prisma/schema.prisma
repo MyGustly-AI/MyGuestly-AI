@@ -203,7 +203,13 @@ model Media {
   duration     Float?
   voiceNoteUrl String?
   metadata     Json?
-  aiStatus     AIProcessingStatus @default(PENDING)
+
+  // --- AI PIPELINE FIELDS ---
+  aiStatus         AIProcessingStatus @default(PENDING)
+  rejectionReason  String?            // e.g., "Blurry (Score: 45)" or "Duplicate"
+  pHash            String?            // Perceptual hash for duplicate detection
+  capturedAt       DateTime?          // Original EXIF camera timestamp
+  clutchName       String?            // AI Timeline group (e.g., "Reception & Item 7 🍽️")
   
   createdAt    DateTime  @default(now())
 
@@ -213,11 +219,15 @@ model Media {
   uploader   User       @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
 
   tags     MediaTag[]
+  guestFaces       GuestFace[]        // NEW: Link to the Identity 
   comments Comment[]
   likes    Like[]
 
   @@index([eventId])
   @@index([uploaderId])
+  @@index([eventId, pHash]) 
+  @@index([eventId, clutchName])
+
 }
 
 enum MediaType {
@@ -324,6 +334,26 @@ model Notification {
   @@index([eventId])
 }
 
+model GuestFace {
+  id          String   @id @default(uuid())
+  
+  // The cluster ID assigned by DBSCAN (e.g., "Guest_1"). 
+  // Can be linked to a real User ID later if the guest claims their profile.
+  guestId     String   
+  
+  // Stores the exact coordinates of the face in the image 
+  // [top, right, bottom, left]. The frontend uses this to crop perfectly 
+  // circular profile pictures for the gallery filter UI.
+  boundingBox Json?    
+
+  mediaId     String
+  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  // Fast lookups when a user clicks their face filter to see all their photos
+  @@index([guestId])
+}
+
+
 enum NotificationType {
   INVITATION_SENT
   RSVP_RECEIVED
@@ -339,3 +369,4 @@ enum AIProcessingStatus {
   APPROVED
   REJECTED
 }
+

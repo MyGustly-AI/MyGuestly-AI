@@ -13,6 +13,9 @@ CREATE TYPE "MemoryType" AS ENUM ('TEXT', 'VOICE');
 -- CreateEnum
 CREATE TYPE "NotificationType" AS ENUM ('INVITATION_SENT', 'RSVP_RECEIVED', 'EVENT_UPDATED', 'EVENT_REMINDER', 'MEDIA_UPLOADED', 'QR_SCANNED');
 
+-- CreateEnum
+CREATE TYPE "AIProcessingStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -75,6 +78,8 @@ CREATE TABLE "Invitation" (
     "id" TEXT NOT NULL,
     "status" "InvitationStatus" NOT NULL DEFAULT 'PENDING',
     "token" TEXT NOT NULL,
+    "sentAt" TIMESTAMP(3),
+    "sentBy" TEXT,
     "rsvpAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -122,6 +127,11 @@ CREATE TABLE "Media" (
     "duration" DOUBLE PRECISION,
     "voiceNoteUrl" TEXT,
     "metadata" JSONB,
+    "aiStatus" "AIProcessingStatus" NOT NULL DEFAULT 'PENDING',
+    "rejectionReason" TEXT,
+    "pHash" TEXT,
+    "capturedAt" TIMESTAMP(3),
+    "clutchName" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "eventId" TEXT NOT NULL,
     "uploaderId" TEXT NOT NULL,
@@ -186,6 +196,16 @@ CREATE TABLE "Notification" (
     "eventId" TEXT,
 
     CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GuestFace" (
+    "id" TEXT NOT NULL,
+    "guestId" TEXT NOT NULL,
+    "boundingBox" JSONB,
+    "mediaId" TEXT NOT NULL,
+
+    CONSTRAINT "GuestFace_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -258,6 +278,12 @@ CREATE INDEX "Media_eventId_idx" ON "Media"("eventId");
 CREATE INDEX "Media_uploaderId_idx" ON "Media"("uploaderId");
 
 -- CreateIndex
+CREATE INDEX "Media_eventId_pHash_idx" ON "Media"("eventId", "pHash");
+
+-- CreateIndex
+CREATE INDEX "Media_eventId_clutchName_idx" ON "Media"("eventId", "clutchName");
+
+-- CreateIndex
 CREATE INDEX "MediaTag_mediaId_idx" ON "MediaTag"("mediaId");
 
 -- CreateIndex
@@ -280,6 +306,9 @@ CREATE INDEX "Notification_userId_isRead_idx" ON "Notification"("userId", "isRea
 
 -- CreateIndex
 CREATE INDEX "Notification_eventId_idx" ON "Notification"("eventId");
+
+-- CreateIndex
+CREATE INDEX "GuestFace_guestId_idx" ON "GuestFace"("guestId");
 
 -- AddForeignKey
 ALTER TABLE "Event" ADD CONSTRAINT "Event_hostId_fkey" FOREIGN KEY ("hostId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -340,3 +369,6 @@ ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "GuestFace" ADD CONSTRAINT "GuestFace_mediaId_fkey" FOREIGN KEY ("mediaId") REFERENCES "Media"("id") ON DELETE CASCADE ON UPDATE CASCADE;
