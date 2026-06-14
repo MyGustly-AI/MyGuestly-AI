@@ -464,7 +464,141 @@ This route verifies the QR/TOTP flow and marks the guest as checked in if the co
 
 ---
 
-## 6. Notes
+---
+
+## 6. Media routes
+
+### GET /api/v1/events/:eventId/media/upload-url
+
+Generates a pre-signed Cloudinary upload URL and signature.
+
+Auth required.
+
+No body.
+
+---
+
+### POST /api/v1/events/:eventId/media
+
+Registers a newly uploaded media file to the event's gallery and enqueues background processing.
+
+Auth required.
+
+Body:
+
+```json
+{
+  "mediaType": "IMAGE",
+  "url": "https://res.cloudinary.com/...",
+  "publicId": "myguestly-ai/events/...",
+  "caption": "Such a lovely moment!"
+}
+```
+
+Fields:
+- mediaType: required ("IMAGE" or "VIDEO")
+- url: required
+- publicId: optional (but highly recommended for background processing)
+- caption: optional
+
+---
+
+### GET /api/v1/events/:eventId/media
+
+Lists the media gallery for an event.
+
+Optional auth (can be viewed by guests).
+
+Query params:
+
+```text
+?page=1&limit=10&mediaType=IMAGE
+```
+
+---
+
+### POST /api/v1/events/:eventId/media/:mediaId/voice-note
+
+Attaches a voice note to an existing media item.
+
+Auth required.
+
+Body:
+
+```json
+{
+  "voiceNoteUrl": "https://..."
+}
+```
+
+---
+
+### POST /api/v1/events/:eventId/media/:mediaId/comments
+
+Adds a comment to an existing media item.
+
+Auth required.
+
+Body:
+
+```json
+{
+  "content": "Wow, what a great picture!"
+}
+```
+
+---
+
+### POST /api/v1/events/:eventId/media/:mediaId/likes
+
+Toggles a like on a media item.
+
+Auth required.
+
+No body.
+
+---
+
+## 7. Memories routes
+
+### POST /api/v1/events/:eventId/memories
+
+Leaves a text or voice memory for the event host.
+
+Auth required.
+
+Body:
+
+```json
+{
+  "content": "Thanks for the amazing party!",
+  "type": "TEXT",
+  "mediaUrl": "https://..."
+}
+```
+
+Fields:
+- content: required for TEXT
+- type: optional (defaults to "TEXT", can be "VOICE")
+- mediaUrl: required if type is "VOICE"
+
+---
+
+### GET /api/v1/events/:eventId/memories
+
+Lists the timeline of memories for an event.
+
+Optional auth.
+
+Query params:
+
+```text
+?page=1&limit=10&type=TEXT
+```
+
+---
+
+## 8. Notes
 
 - All successful responses follow a consistent JSON envelope with `success`, `message`, `data`, `errors`, and `timestamp`.
 - Validation errors return HTTP 400 with structured details.
