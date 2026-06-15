@@ -7,7 +7,7 @@ import {generateAccessToken, generateRefreshToken, generateEmailVerificationToke
 import { RegistrationWorkflow } from "../../orchestration/RegistrationWorkflow.js";
 import { AppError } from "../../shared/utils/AppError.js";
 import { EmailJobs } from "../../infra/queues/jobs/emailJobs.js";
-import { logger } from "../../infra/logs/logger.js";
+import { logger } from "../../infra/loggers/logger.js";
 
 
 // Registration service to create new user and generate tokens
@@ -88,8 +88,9 @@ export const registerUser = async (payload) => {
         60 * 60 * 24 * 7
     );
 
+    const { password: _, ...userWithoutPassword } = user;
     return {
-        user,
+        user: userWithoutPassword,
         accessToken,
         refreshToken,
     };

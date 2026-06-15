@@ -134,8 +134,8 @@ export class GuestService extends BaseService {
         });
         if (!event) throw AppError.notFound("Event not found");
 
-        const confirmedCount = await this.model.count({
-          where: { eventId, rsvpStatus: "CONFIRMED" },
+        const confirmedCount = await this.prisma.invitation.count({
+          where: { eventId, status: "ACCEPTED" },
         });
         if (event.maxGuests > 0 && confirmedCount >= event.maxGuests) {
           throw AppError.badRequest(
@@ -144,8 +144,15 @@ export class GuestService extends BaseService {
         }
       }
 
-      const updated = await this.update(guestId, {
-        rsvpStatus: status,
+      const dbStatus = status === "CONFIRMED" ? "ACCEPTED" : status;
+      const invitation = await this.prisma.invitation.findFirst({
+        where: { guestId, eventId },
+      });
+      if (!invitation) throw AppError.notFound("Invitation not found");
+
+      const updated = await this.prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { status: dbStatus },
       });
 
       return updated;
@@ -157,12 +164,18 @@ export class GuestService extends BaseService {
   async listGuests(eventId, where = {}, skip = 0, take = 10) {
     try {
       const filter = { eventId, ...where };
+      if (filter.rsvpStatus) {
+        const dbStatus = filter.rsvpStatus === "CONFIRMED" ? "ACCEPTED" : filter.rsvpStatus;
+        filter.invitation = { status: dbStatus };
+        delete filter.rsvpStatus;
+      }
       const [records, total] = await Promise.all([
         this.model.findMany({
           where: filter,
           skip,
           take,
           orderBy: { createdAt: "desc" },
+          include: { invitation: true },
         }),
         this.model.count({ where: filter }),
       ]);

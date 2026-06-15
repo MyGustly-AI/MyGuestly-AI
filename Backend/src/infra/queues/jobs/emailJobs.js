@@ -1,5 +1,5 @@
 import { emailQueue } from "../emailQueue.js";
-import { logger } from "../../logs/logger.js";
+import { logger } from "../../loggers/logger.js";
 
 export const EmailJobs = {
     sendInvitation(data) {

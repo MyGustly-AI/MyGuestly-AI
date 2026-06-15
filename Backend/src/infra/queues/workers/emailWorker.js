@@ -8,7 +8,8 @@ import {
   invitationTemplate,
 } from "../../email/emailTemplates.js";
 import { generateTicketPDF } from "../../email/ticketGenerator.js";
-import { logger } from "../../logs/logger.js";
+import { logger } from "../../loggers/logger.js";
+import { prisma } from "../../../shared/utils/prisma.js";
 
 export function startEmailWorker() {
   const worker = new Worker(
@@ -161,6 +162,24 @@ async function handleInvitation(data) {
         html: template.html,
         attachments,
     });
+
+    // Track the send on the invitation record
+    if (data.invitationId) {
+      try {
+        await prisma.invitation.update({
+          where: { id: data.invitationId },
+          data: {
+            sentAt: new Date(),
+            sentBy: data.hostId || "system",
+          },
+        });
+      } catch (err) {
+        logger.error("Failed to update invitation sentAt", {
+          invitationId: data.invitationId,
+          error: err?.message || err,
+        });
+      }
+    }
 
     logger.info("Invitation sent", {
         invitationId: data.invitationId,

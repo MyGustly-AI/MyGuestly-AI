@@ -105,4 +105,34 @@ export class MediaService {
     });
     return media;
   }
+
+  async getMedia(mediaId) {
+    const media = await this.prisma.media.findUnique({
+      where: { id: mediaId },
+    });
+    if (!media) throw AppError.notFound("Media not found");
+    return media;
+  }
+
+  async deleteMedia(mediaId, userId) {
+    const media = await this.prisma.media.findUnique({
+      where: { id: mediaId },
+    });
+    if (!media) throw AppError.notFound("Media not found");
+
+    const isOwner = media.uploaderId === userId;
+    const isHost = await this.prisma.event.findUnique({
+      where: { id: media.eventId },
+    }).then(e => e?.hostId === userId);
+
+    if (!isOwner && !isHost) {
+      throw AppError.forbidden("You do not have permission to delete this media");
+    }
+
+    await this.prisma.media.update({
+      where: { id: mediaId },
+      data: { deletedAt: new Date() },
+    });
+    return true;
+  }
 }
