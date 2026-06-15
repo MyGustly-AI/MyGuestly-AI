@@ -36,6 +36,9 @@ const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
 
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
   // Termii SMS
   TERMII_API_KEY: z.string().optional(),
   TERMII_SENDER_ID: z.string().default("MyGuestly"),

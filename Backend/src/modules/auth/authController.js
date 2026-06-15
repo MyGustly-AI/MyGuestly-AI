@@ -1,4 +1,5 @@
 import { registerUser, loginUser, refreshUserToken, logoutUser, getCurrentUser, updateProfile, changePassword, verifyEmail, forgotPassword, resetPassword, deleteUserAccount } from "./authService.js";
+import { googleLogin as googleLoginService } from "./googleAuthService.js";
 import { ApiResponse } from "../../shared/utils/ApiResponse.js";
 
 
@@ -180,6 +181,25 @@ export const deleteMyAccount = async (req, res, next) => {
         await deleteUserAccount(req.user.userId);
         res.clearCookie("refreshToken");
         return ApiResponse.success(res, "Account deleted successfully");
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Controller to handle Google OAuth login
+export const googleLoginController = async (req, res, next) => {
+    try {
+        const result = await googleLoginService(req.body.idToken);
+        res.cookie("refreshToken", result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        return ApiResponse.success(res, "Google login successful", {
+            user: result.user,
+            accessToken: result.accessToken,
+        });
     } catch (error) {
         next(error);
     }
