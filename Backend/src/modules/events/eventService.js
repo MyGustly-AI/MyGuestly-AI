@@ -6,7 +6,7 @@
 import { BaseService } from "../../shared/base/BaseService.js";
 import { AppError } from "../../shared/utils/AppError.js";
 import { QRUtil } from "../../shared/utils/helpers.js";
-import { logger } from "../../infra/logs/logger.js";
+import { logger } from "../../infra/loggers/logger.js";
 
 export class EventService extends BaseService {
   constructor(prisma) {
@@ -59,16 +59,16 @@ export class EventService extends BaseService {
         throw AppError.notFound("Event not found");
       }
 
-      // Get guest statistics
-      const guestStats = await this.prisma.guest.groupBy({
-        by: ["rsvpStatus"],
-        where: { eventId },
-        _count: true,
-      });
-
-      const totalGuests = await this.prisma.guest.count({
-        where: { eventId },
-      });
+      // Get guest statistics from invitations (Invitation.status holds RSVP status)
+      const [guestStats, totalGuests, checkInCount] = await Promise.all([
+        this.prisma.invitation.groupBy({
+          by: ["status"],
+          where: { eventId },
+          _count: true,
+        }),
+        this.prisma.guest.count({ where: { eventId } }),
+        this.prisma.checkIn.count({ where: { eventId } }),
+      ]);
 
       const stats = {
         total: totalGuests,
@@ -78,10 +78,11 @@ export class EventService extends BaseService {
       };
 
       guestStats.forEach((stat) => {
-        if (stat.rsvpStatus === "CONFIRMED") stats.confirmed = stat._count;
-        else if (stat.rsvpStatus === "DECLINED") stats.declined = stat._count;
-        else if (stat.rsvpStatus === "PENDING") stats.pending = stat._count;
+        if (stat.status === "ACCEPTED") stats.confirmed = stat._count;
+        else if (stat.status === "DECLINED") stats.declined = stat._count;
       });
+
+      stats.pending = Math.max(0, stats.total - stats.confirmed - stats.declined - checkInCount);
 
       return {
         ...event,
@@ -264,8 +265,8 @@ export class EventService extends BaseService {
         throw AppError.notFound("Event not found");
       }
 
-      const guestCount = await this.prisma.guest.count({
-        where: { eventId, rsvpStatus: "CONFIRMED" },
+      const guestCount = await this.prisma.invitation.count({
+        where: { eventId, status: "ACCEPTED" },
       });
 
       const availableSpots = Math.max(0, event.maxGuests - guestCount);
@@ -296,8 +297,8 @@ export class EventService extends BaseService {
       const event = await this.getEvent(eventId);
 
       // Get check-in stats
-      const checkIns = await this.prisma.guest.count({
-        where: { eventId, checkedIn: true },
+      const checkIns = await this.prisma.checkIn.count({
+        where: { eventId },
       });
 
       const mediaCount = await this.prisma.media.count({
