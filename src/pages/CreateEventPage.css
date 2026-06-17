@@ -1,0 +1,111 @@
+.create-event-outer {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 36px 32px;
+}
+.create-event-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.create-event-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+.create-event-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+.create-event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 14px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.category-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.category-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.category-btn.active {
+  border-color: var(--primary);
+  background: var(--light-bg);
+  color: var(--primary);
+}
+.category-btn:hover { border-color: var(--primary); color: var(--primary); }
+.cat-icon { display: flex; align-items: center; color: inherit; }
+
+.personalisation-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.upload-box {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.upload-box small { font-size: 11px; color: var(--text-light); }
+.upload-box:hover { border-color: var(--primary); }
+
+.theme-accent { display: flex; flex-direction: column; gap: 10px; }
+.color-swatches { display: flex; gap: 8px; }
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.18s;
+}
+.color-swatch.active { border-color: var(--text-dark); transform: scale(1.15); }
+.color-swatch:hover { transform: scale(1.1); }
+.color-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.color-input-row { display: flex; align-items: center; gap: 8px; }
+
+.create-event-submit {
+  width: 100%;
+  justify-content: center;
+  padding: 14px !important;
+  font-size: 14px !important;
+  margin-top: 4px;
+}
