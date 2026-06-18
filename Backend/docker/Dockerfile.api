@@ -1,0 +1,24 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache bash openssl libc6-compat
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+RUN chown appuser:appgroup /app
+
+USER appuser
+
+COPY --chown=appuser:appgroup package*.json ./
+RUN npm ci
+
+COPY --chown=appuser:appgroup . .
+COPY --chown=appuser:appgroup prisma.config.ts ./
+
+COPY --chown=appuser:appgroup src ./src
+RUN npx prisma generate
+
+EXPOSE 5003
+
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
