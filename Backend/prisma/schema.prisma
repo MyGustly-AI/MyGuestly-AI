@@ -1,122 +1,87 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
-  datasource db {
+datasource db {
   provider = "postgresql"
-  
 }
 
-// ─────────────────────────────────────────
-// USER
-// ─────────────────────────────────────────
-
 model User {
-  id         String    @id @default(uuid())
-  fullName   String?
-  email      String    @unique
-  phone      String?   @unique
-  password   String
-  role       Role      @default(HOST)
-  isVerified Boolean   @default(false)
-  avatarUrl  String?
-  deletedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
+  id            String         @id @default(uuid())
+  fullName      String?
+  email         String         @unique
+  phone         String?        @unique
+  password      String
+  role          Role           @default(HOST)
+  isVerified    Boolean        @default(false)
+  avatarUrl     String?
+  deletedAt     DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  comments      Comment[]
   events        Event[]
   invitations   Invitation[]
+  likes         Like[]
   mediaUploads  Media[]
   memories      Memory[]
-  comments      Comment[]
-  likes         Like[]
   notifications Notification[]
 
   @@index([email])
   @@index([deletedAt])
 }
 
-enum Role {
-  SUPER_ADMIN
-  HOST
-  PHOTOGRAPHER
-  GUEST
-}
-
-// ─────────────────────────────────────────
-// EVENT
-// ─────────────────────────────────────────
-
 model Event {
-  id            String    @id @default(uuid())
+  id            String         @id @default(uuid())
   title         String
   description   String?
-  eventCategory String?   // Category such as wedding, corporate, etc.
-  venueName     String?   // Event venue name
-  address       String?   // Venue address
-  location      String?   // Optional shorthand location or city
-  coverUrl      String?   // Event cover image url
-  themeAccent   String?   // Personalization/theme accent color or label
-  rsvpDeadline  DateTime? // RSVP deadline to close guest responses
+  eventCategory String?
+  venueName     String?
+  address       String?
+  location      String?
+  coverUrl      String?
+  themeAccent   String?
+  rsvpDeadline  DateTime?
   startDate     DateTime
   endDate       DateTime
-  eventCode     String    @unique // Short readable code for guests to join manually
-  status        String    @default("DRAFT")
-  maxGuests     Int       @default(0)
+  eventCode     String         @unique
+  status        String         @default("DRAFT")
+  maxGuests     Int            @default(0)
   publishedAt   DateTime?
   startedAt     DateTime?
   endedAt       DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  hostId      String
-  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
-
-  guests      Guest[]  // An event can have many invited guests
-  media       Media[]  // An event has a shared collaborative timeline
-  invitations Invitation[]
-  qrCodes     QRCode[]
-  checkIns    CheckIn[]
-  memories    Memory[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  hostId        String
+  checkIns      CheckIn[]
+  host          User           @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  guests        Guest[]
+  invitations   Invitation[]
+  media         Media[]
+  memories      Memory[]
   notifications Notification[]
+  qrCodes       QRCode[]
 
   @@index([hostId])
   @@index([startDate])
   @@index([updatedAt])
 }
 
-// ─────────────────────────────────────────
-// GUEST
-// Bulk-imported guest list entry may or may not have a registered User account
-// ─────────────────────────────────────────
-
 model Guest {
-  id        String   @id @default(uuid())
-  fullName  String
-  email     String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id         String      @id @default(uuid())
+  fullName   String
+  email      String?
+  phone      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   eventId    String
+  checkIn    CheckIn?
   event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   invitation Invitation?
-  checkIn    CheckIn?
 
   @@unique([eventId, email])
   @@unique([eventId, phone])
   @@index([eventId])
 }
-
-// ─────────────────────────────────────────
-// INVITATION
-// Tracks RSVP status per guest per event
-// ─────────────────────────────────────────
 
 model Invitation {
   id        String           @id @default(uuid())
@@ -127,136 +92,88 @@ model Invitation {
   rsvpAt    DateTime?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
-
-  eventId String
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  guestId String @unique
-  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  userId  String?
-  user    User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  qrCode QRCode?
+  eventId   String
+  guestId   String           @unique
+  userId    String?
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guest     Guest            @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  user      User?            @relation(fields: [userId], references: [id])
+  qrCode    QRCode?
 
   @@index([eventId])
   @@index([token])
 }
 
-enum InvitationStatus {
-  PENDING
-  ACCEPTED
-  DECLINED
-  CHECKED_IN
-}
-
-// ─────────────────────────────────────────
-// QR CODE
-// One QR code per invitation — used at gate
-// ─────────────────────────────────────────
-
 model QRCode {
-  id          String    @id @default(uuid())
-  code        String    @unique
-  isScanned   Boolean   @default(false)
-  scannedAt   DateTime?
-  scannedByIp String?
-  createdAt   DateTime  @default(now())
-
+  id           String     @id @default(uuid())
+  code         String     @unique
+  isScanned    Boolean    @default(false)
+  scannedAt    DateTime?
+  scannedByIp  String?
+  createdAt    DateTime   @default(now())
   invitationId String     @unique
-  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
   eventId      String
   event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
 
   @@index([code])
   @@index([eventId])
 }
 
-// ─────────────────────────────────────────
-// CHECK-IN
-// Written when a guest scans in at the gate
-// ─────────────────────────────────────────
-
 model CheckIn {
   id          String   @id @default(uuid())
   checkedAt   DateTime @default(now())
   checkedByIp String?
-
-  eventId String
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  guestId String @unique
-  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  eventId     String
+  guestId     String   @unique
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guest       Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
 }
 
-// ─────────────────────────────────────────
-// MEDIA
-// ─────────────────────────────────────────
-
 model Media {
-  id           String    @id @default(uuid())
-  url          String
-  publicId     String
-  mediaType    MediaType
-  size         Int?
-  width        Int?
-  height       Int?
-  duration     Float?
-  voiceNoteUrl String?
-  metadata     Json?
-
-  // --- AI PIPELINE FIELDS ---
-  aiStatus         AIProcessingStatus @default(PENDING)
-  rejectionReason  String?            // e.g., "Blurry (Score: 45)" or "Duplicate"
-  pHash            String?            // Perceptual hash for duplicate detection
-  capturedAt       DateTime?          // Original EXIF camera timestamp
-  clutchName       String?            // AI Timeline group (e.g., "Reception & Item 7 🍽️")
-  
-  createdAt    DateTime  @default(now())
-
-  eventId    String
-  event      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  uploaderId String
-  uploader   User       @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
-
-  tags     MediaTag[]
-  guestFaces       GuestFace[]        // NEW: Link to the Identity 
-  comments Comment[]
-  likes    Like[]
+  id              String             @id @default(uuid())
+  url             String
+  publicId        String
+  mediaType       MediaType
+  size            Int?
+  width           Int?
+  height          Int?
+  duration        Float?
+  voiceNoteUrl    String?
+  metadata        Json?
+  aiStatus        AIProcessingStatus @default(PENDING)
+  rejectionReason String?
+  pHash           String?
+  capturedAt      DateTime?
+  clutchName      String?
+  createdAt       DateTime           @default(now())
+  eventId         String
+  uploaderId      String
+  comments        Comment[]
+  guestFaces      GuestFace[]
+  likes           Like[]
+  event           Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploader        User               @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  tags            MediaTag[]
 
   @@index([eventId])
   @@index([uploaderId])
-  @@index([eventId, pHash]) 
+  @@index([eventId, pHash])
   @@index([eventId, clutchName])
-
 }
-
-enum MediaType {
-  IMAGE
-  VIDEO
-  AUDIO
-}
-
-// ─────────────────────────────────────────
-// MEDIA TAG
-// AI-generated labels attached to media
-// ─────────────────────────────────────────
 
 model MediaTag {
   id         String @id @default(uuid())
   label      String
   confidence Float?
-
-  mediaId String
-  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId    String
+  media      Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@unique([mediaId, label])
   @@index([mediaId])
 }
-
-// ─────────────────────────────────────────
-// MEMORY
-// Text or voice note left by a guest
-// ─────────────────────────────────────────
 
 model Memory {
   id        String     @id @default(uuid())
@@ -264,57 +181,37 @@ model Memory {
   content   String?
   audioUrl  String?
   createdAt DateTime   @default(now())
-
-  eventId  String
-  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  eventId   String
+  authorId  String
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
 }
-
-enum MemoryType {
-  TEXT
-  VOICE
-}
-
-// ─────────────────────────────────────────
-// COMMENT
-// ─────────────────────────────────────────
 
 model Comment {
   id        String   @id @default(uuid())
   content   String
   createdAt DateTime @default(now())
-
-  mediaId  String
-  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mediaId   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@index([mediaId])
 }
-
-// ─────────────────────────────────────────
-// LIKE
-// ─────────────────────────────────────────
 
 model Like {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
-
-  mediaId String
-  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaId   String
+  userId    String
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([mediaId, userId])
   @@index([mediaId])
 }
-
-// ─────────────────────────────────────────
-// NOTIFICATION
-// ─────────────────────────────────────────
 
 model Notification {
   id        String           @id @default(uuid())
@@ -324,35 +221,49 @@ model Notification {
   isRead    Boolean          @default(false)
   metadata  Json?
   createdAt DateTime         @default(now())
-
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  eventId String?
-  event   Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  userId    String
+  eventId   String?
+  event     Event?           @relation(fields: [eventId], references: [id])
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
   @@index([eventId])
 }
 
 model GuestFace {
-  id          String   @id @default(uuid())
-  
-  // The cluster ID assigned by DBSCAN (e.g., "Guest_1"). 
-  // Can be linked to a real User ID later if the guest claims their profile.
-  guestId     String   
-  
-  // Stores the exact coordinates of the face in the image 
-  // [top, right, bottom, left]. The frontend uses this to crop perfectly 
-  // circular profile pictures for the gallery filter UI.
-  boundingBox Json?    
-
+  id          String @id @default(uuid())
+  guestId     String
+  boundingBox Json?
   mediaId     String
-  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  media       Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
-  // Fast lookups when a user clicks their face filter to see all their photos
   @@index([guestId])
 }
 
+enum Role {
+  SUPER_ADMIN
+  HOST
+  PHOTOGRAPHER
+  GUEST
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CHECKED_IN
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+}
+
+enum MemoryType {
+  TEXT
+  VOICE
+}
 
 enum NotificationType {
   INVITATION_SENT
@@ -363,10 +274,8 @@ enum NotificationType {
   QR_SCANNED
 }
 
-// ai part:
 enum AIProcessingStatus {
   PENDING
   APPROVED
   REJECTED
 }
-
