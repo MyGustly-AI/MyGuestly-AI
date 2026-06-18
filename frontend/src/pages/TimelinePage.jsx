@@ -138,7 +138,7 @@ export default function TimelinePage() {
                   <img src="/img1.png" alt="Food bites" />
                 </div>
                 <div className="img-bottom-right">
-                  <div className="timeline-upload-count" style={{ width: '100%' }}>
+                  <div className="timeline-upload-count">
                     <div className="timeline-upload-count-num">120+</div>
                     <div className="timeline-upload-count-label">Uploads</div>
                   </div>
