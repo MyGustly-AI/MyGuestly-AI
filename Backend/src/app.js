@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Must be the very first line
 import express from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -10,7 +11,7 @@ import { errorHandler } from "./middlewares/errorMiddleware.js";
 import { notFoundHandler } from "./middlewares/notFoundMiddleware.js";
 import { metricsMiddleware, metricsHandler } from "./infra/metrics/index.js";
 import { deepHealthCheck } from "./infra/health/index.js";
-
+import aiRoutes from './routes/ai.routes.js';
 
 
 const app = express(); // Init express ap
@@ -30,6 +31,8 @@ app.use(
 
 app.use(requestLogger); // Middleware to log incoming requests for debugging and monitoring purposes
 app.use(apiLimiter); // Middleware to limit the number of requests from a single IP address
+app.use('/api/ai', aiRoutes);
+app.use(errorLogger); // Middleware to log errors that occur during request processing for debugging and monitoring purposes
 
 // Health check endpoint
 app.get("/api/v1/health", (req, res) => {
