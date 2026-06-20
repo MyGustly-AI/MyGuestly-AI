@@ -2,8 +2,14 @@ import { AppError } from "../../shared/utils/AppError.js";
 import { redis } from "../../config/redis.js";
 import { aiTagQueue } from "../../infra/queues/aiQueue.js";
 import { logger } from "../../infra/loggers/logger.js";
+import { OpenAI } from 'openai';
 
 const TIMELINE_CACHE_TTL = 60 * 60;
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || "missing_key",
+  baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
+});
 
 export class AIService {
   constructor(prisma) {
@@ -82,5 +88,29 @@ export class AIService {
     }
     clusters.push(currentCluster);
     return clusters;
+  }
+
+  async organizeEventMoments(mediaDescriptions) {
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'llama3-8b-8192', 
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are an event memory assistant. Categorize the following media descriptions into meaningful event moments (e.g., Ceremony, Reception, Dance). Return the result as a structured JSON object where keys are the categories and values are arrays of the media items.' 
+          },
+          { 
+            role: 'user', 
+            content: JSON.stringify(mediaDescriptions) 
+          }
+        ],
+        response_format: { type: 'json_object' }
+      });
+
+      return JSON.parse(response.choices[0].message.content);
+    } catch (error) {
+      console.error('AI Integration Error:', error);
+      throw AppError.internal('Failed to organize event moments');
+    }
   }
 }

@@ -2,7 +2,6 @@ import { Router } from "express";
 import aiController from "./aiController.js";
 import { authenticate } from "../../middlewares/authenticateMiddleware.js";
 import { authorize } from "../../middlewares/authorizeMiddleware.js";
-import { categorizeMedia } from "../../controllers/ai.controllers.js";
 
 const router = Router({ mergeParams: true });
 
@@ -18,6 +17,6 @@ router.post(
   aiController.retag,
 );
 
-router.post('/organize', categorizeMedia);
+router.post('/organize', aiController.categorizeMedia);
 
 export default router;
