@@ -2,7 +2,6 @@ import 'dotenv/config'; // Must be the very first line
 import { Router } from "express";
 const router = Router();
 
-import aiRoutes from './routes/ai.routes.js';
 import authRoutes from "../modules/auth/authRoutes.js";
 import eventRoutes from "../modules/events/eventRoutes.js";
 import invitationRoutes from "../modules/invitations/invitationRoutes.js";
