@@ -16,6 +16,8 @@ const envSchema = z.object({
   JWT_EMAIL_VERIFICATION_SECRET: z.string().min(1),
   JWT_PASSWORD_RESET_SECRET: z.string().min(1),
 
+  QR_SECRET: z.string().min(1),
+
   // CORS
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
 
@@ -33,6 +35,16 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
+  // Termii SMS
+  TERMII_API_KEY: z.string().optional(),
+  TERMII_SENDER_ID: z.string().default("MyGuestly"),
+
+  // OpenAI
+  OPENAI_API_KEY: z.string().optional(),
 
   // Optional
   EMAIL_FROM: z.string().optional(),

@@ -7,31 +7,33 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  fullName      String?
-  email         String         @unique
-  phone         String?        @unique
-  password      String
-  role          Role           @default(HOST)
-  isVerified    Boolean        @default(false)
-  avatarUrl     String?
-  deletedAt     DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  comments      Comment[]
+  id         String    @id @default(uuid())
+  fullName   String?
+  email      String    @unique
+  phone      String?   @unique
+  password   String
+  googleId   String?   @unique
+  role       Role      @default(HOST)
+  isVerified Boolean   @default(false)
+  avatarUrl  String?
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
   events        Event[]
   invitations   Invitation[]
   likes         Like[]
   mediaUploads  Media[]
   memories      Memory[]
   notifications Notification[]
+  comments      Comment[]
 
   @@index([email])
   @@index([deletedAt])
 }
 
 model Event {
-  id            String         @id @default(uuid())
+  id            String    @id @default(uuid())
   title         String
   description   String?
   eventCategory String?
@@ -43,23 +45,28 @@ model Event {
   rsvpDeadline  DateTime?
   startDate     DateTime
   endDate       DateTime
-  eventCode     String         @unique
-  status        String         @default("DRAFT")
-  maxGuests     Int            @default(0)
-  publishedAt   DateTime?
-  startedAt     DateTime?
-  endedAt       DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  hostId        String
-  checkIns      CheckIn[]
-  host          User           @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  eventCode   String    @unique
+  status      String    @default("DRAFT")
+  maxGuests   Int       @default(0)
+  publishedAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  hostId String
+  host   User   @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
   guests        Guest[]
-  invitations   Invitation[]
   media         Media[]
+  invitations   Invitation[]
+  qrCodes       QRCode[]
+  checkIns      CheckIn[]
   memories      Memory[]
   notifications Notification[]
-  qrCodes       QRCode[]
+  feedbacks     Feedback[]
 
   @@index([hostId])
   @@index([startDate])
@@ -67,16 +74,21 @@ model Event {
 }
 
 model Guest {
-  id         String      @id @default(uuid())
-  fullName   String
-  email      String?
-  phone      String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  eventId    String
-  checkIn    CheckIn?
-  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id        String    @id @default(uuid())
+  fullName  String
+  email     String?
+  phone     String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
   invitation Invitation?
+  checkIn    CheckIn?
+  feedbacks  Feedback[]
+  faces      GuestFace[]
 
   @@unique([eventId, email])
   @@unique([eventId, phone])
@@ -90,6 +102,7 @@ model Invitation {
   sentAt    DateTime?
   sentBy    String?
   rsvpAt    DateTime?
+  deletedAt DateTime?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   eventId   String
@@ -102,15 +115,20 @@ model Invitation {
 
   @@index([eventId])
   @@index([token])
+  @@index([status])
+  @@index([eventId, status])
 }
 
 model QRCode {
-  id           String     @id @default(uuid())
-  code         String     @unique
-  isScanned    Boolean    @default(false)
-  scannedAt    DateTime?
-  scannedByIp  String?
-  createdAt    DateTime   @default(now())
+  id          String    @id @default(uuid())
+  code        String    @unique
+  isScanned   Boolean   @default(false)
+  scannedAt   DateTime?
+  scannedByIp String?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   invitationId String     @unique
   eventId      String
   event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -121,93 +139,130 @@ model QRCode {
 }
 
 model CheckIn {
-  id          String   @id @default(uuid())
-  checkedAt   DateTime @default(now())
+  id          String    @id @default(uuid())
+  checkedAt   DateTime  @default(now())
   checkedByIp String?
-  eventId     String
-  guestId     String   @unique
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  guest       Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId String @unique
+  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
+  @@index([eventId, guestId])
+}
+
+enum MediaStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
 }
 
 model Media {
-  id              String             @id @default(uuid())
-  url             String
-  publicId        String
-  mediaType       MediaType
-  size            Int?
-  width           Int?
-  height          Int?
-  duration        Float?
-  voiceNoteUrl    String?
-  metadata        Json?
+  id        String      @id @default(uuid())
+  url       String
+  publicId  String
+  mediaType MediaType
+  status    MediaStatus @default(UPLOADING)
+
+  size         Int?
+  width        Int?
+  height       Int?
+  duration     Float?
+  voiceNoteUrl String?
+  metadata     Json?
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
   aiStatus        AIProcessingStatus @default(PENDING)
   rejectionReason String?
   pHash           String?
   capturedAt      DateTime?
   clutchName      String?
-  createdAt       DateTime           @default(now())
-  eventId         String
-  uploaderId      String
-  comments        Comment[]
-  guestFaces      GuestFace[]
-  likes           Like[]
-  event           Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  uploader        User               @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
-  tags            MediaTag[]
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  uploaderId String
+  uploader   User   @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  tags       MediaTag[]
+  guestFaces GuestFace[]
+  comments   Comment[]
+  likes      Like[]
 
   @@index([eventId])
   @@index([uploaderId])
+  @@index([eventId, status])
   @@index([eventId, pHash])
   @@index([eventId, clutchName])
 }
 
 model MediaTag {
-  id         String @id @default(uuid())
+  id         String   @id @default(uuid())
   label      String
   confidence Float?
-  mediaId    String
-  media      Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  source     String   @default("ai")
+  createdAt  DateTime @default(now())
+
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@unique([mediaId, label])
   @@index([mediaId])
+  @@index([label])
 }
 
 model Memory {
-  id        String     @id @default(uuid())
-  type      MemoryType
-  content   String?
-  audioUrl  String?
-  createdAt DateTime   @default(now())
-  eventId   String
-  authorId  String
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id           String     @id @default(uuid())
+  type         MemoryType
+  content      String?
+  audioUrl     String?
+  durationSecs Int?
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  eventId  String
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
+  @@index([authorId])
 }
 
 model Comment {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   content   String
-  createdAt DateTime @default(now())
-  mediaId   String
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  mediaId  String
+  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([mediaId])
 }
 
 model Like {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  mediaId   String
-  userId    String
-  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(uuid())
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([mediaId, userId])
   @@index([mediaId])
@@ -220,11 +275,14 @@ model Notification {
   body      String
   isRead    Boolean          @default(false)
   metadata  Json?
+  deletedAt DateTime?
   createdAt DateTime         @default(now())
-  userId    String
-  eventId   String?
-  event     Event?           @relation(fields: [eventId], references: [id])
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime         @updatedAt
+
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId String?
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
   @@index([userId, isRead])
   @@index([eventId])
@@ -233,6 +291,7 @@ model Notification {
 model GuestFace {
   id          String @id @default(uuid())
   guestId     String
+  guest       Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
   boundingBox Json?
   mediaId     String
   media       Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
@@ -278,4 +337,30 @@ enum AIProcessingStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model Feedback {
+  id        String            @id @default(uuid())
+  rating    Int               @default(5)
+  comment   String?
+  category  FeedbackCategory?
+  deletedAt DateTime?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guestId String
+  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, guestId])
+  @@index([eventId])
+}
+
+enum FeedbackCategory {
+  GENERAL
+  VENUE
+  CATERING
+  ENTERTAINMENT
+  ORGANIZATION
 }

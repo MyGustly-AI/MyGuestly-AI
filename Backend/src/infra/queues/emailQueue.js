@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 import env from "../../config/env.js";
-import { logger } from "../logs/logger.js";
+import { logger } from "../loggers/logger.js";
 
 export const connection = {
     url: env.REDIS_URL,

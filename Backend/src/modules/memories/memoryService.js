@@ -32,6 +32,28 @@ export class MemoryService {
     return memory;
   }
 
+  async deleteMemory(memoryId, userId) {
+    const memory = await this.prisma.memory.findUnique({
+      where: { id: memoryId },
+    });
+    if (!memory) throw AppError.notFound("Memory not found");
+
+    const isAuthor = memory.authorId === userId;
+    const isHost = await this.prisma.event.findUnique({
+      where: { id: memory.eventId },
+    }).then(e => e?.hostId === userId);
+
+    if (!isAuthor && !isHost) {
+      throw AppError.forbidden("You do not have permission to delete this memory");
+    }
+
+    await this.prisma.memory.update({
+      where: { id: memoryId },
+      data: { deletedAt: new Date() },
+    });
+    return true;
+  }
+
   async getMemories(eventId, skip, take, type) {
     const where = { eventId };
     if (type && (type === "TEXT" || type === "VOICE")) {
