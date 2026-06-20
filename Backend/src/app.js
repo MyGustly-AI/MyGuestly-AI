@@ -11,7 +11,6 @@ import { errorHandler } from "./middlewares/errorMiddleware.js";
 import { notFoundHandler } from "./middlewares/notFoundMiddleware.js";
 import { metricsMiddleware, metricsHandler } from "./infra/metrics/index.js";
 import { deepHealthCheck } from "./infra/health/index.js";
-import aiRoutes from './routes/ai.routes.js';
 
 
 const app = express(); // Init express ap
