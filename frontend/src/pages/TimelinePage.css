@@ -124,31 +124,32 @@
 .timeline-voice-bar {
   background: #fff;
   border-bottom: 1px solid #ede8f5;
-  padding: 18px 40px;
+  padding: 20px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 32px;
 }
 
 .timeline-voice-info {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .timeline-voice-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 700;
   color: #1a0a2e;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 2px;
+  gap: 10px;
+  margin-bottom: 4px;
+  white-space: nowrap;
 }
 
 .timeline-voice-title i {
   color: #5b3fa0;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .timeline-voice-title-dot {
@@ -157,22 +158,26 @@
   border-radius: 50%;
   background: #5b3fa0;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .timeline-voice-desc {
   font-size: 12px;
   color: #aaa;
+  padding-left: 30px;
 }
 
 .timeline-voice-player {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .timeline-play-btn {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: #5b3fa0;
   border: none;
@@ -191,12 +196,33 @@
 .timeline-voice-label {
   font-size: 13px;
   color: #555;
+  white-space: nowrap;
 }
 
 .timeline-voice-duration {
   font-size: 13px;
   color: #aaa;
   font-weight: 500;
+  white-space: nowrap;
+}
+
+/* WAVEFORM */
+.timeline-voice-waveform {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 40px;
+  padding: 0 16px;
+}
+
+.timeline-waveform-bar {
+  display: block;
+  width: 3px;
+  border-radius: 2px;
+  background-color: #c4b8e8;
+  flex-shrink: 0;
 }
 
 /* ── MAIN TIMELINE ── */

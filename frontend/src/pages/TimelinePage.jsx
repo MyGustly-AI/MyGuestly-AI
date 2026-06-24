@@ -65,6 +65,11 @@ export default function TimelinePage() {
           </div>
           <div className="timeline-voice-desc">Voice notes compilations from the loved ones of the couple</div>
         </div>
+        <div className="timeline-voice-waveform">
+          {[6,10,16,12,20,14,24,18,12,16,22,14,10,18,12,8,16,20,14,10].map((h, i) => (
+            <span key={i} className="timeline-waveform-bar" style={{ height: h + 'px' }} />
+          ))}
+        </div>
         <div className="timeline-voice-player">
           <button className="timeline-play-btn" aria-label="Play voice notes">
             <i className="ti ti-player-play" />

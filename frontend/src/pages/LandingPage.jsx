@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
+import Logo from '../components/Logo';
 
 // ─── Small reusable icons ────────────────────────────────────────────────────
 
@@ -82,10 +83,7 @@ export default function LandingPage() {
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
       <nav className="navbar">
         <div className="navbar-inner">
-        <a href="/" className="navbar-logo">
-        <span className="logo-my">My</span>
-        <span className="logo-guestly">Guestly Ai</span>
-         </a>
+          <Logo />
           <ul className="navbar-links">
             <li><a href="#features" className="nav-link nav-link--active">Features</a></li>
             <li><a href="/how-it-works" className="nav-link">How It Works</a></li>

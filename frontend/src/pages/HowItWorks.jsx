@@ -120,7 +120,7 @@ export default function HowItWorksPage() {
             Experience a seamless journey from the first digital invitation to the final AI-powered gallery. We handle the logistics; you enjoy the celebration.
           </p>
           <div className="hiw-hero-btns">
-            <button className="hiw-btn-primary" onClick={() => navigate('/host-signup')}>Start Planning Now</button>
+            <button className="hiw-btn-primary" onClick={() => navigate('/signup')}>Start Planning Now</button>
             <button className="hiw-btn-outline">Watch the Journey</button>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function HowItWorksPage() {
           <h2 className="hiw-cta-title">Ready to Host Your Next Masterpiece?</h2>
           <p className="hiw-cta-sub">Join thousands of hosts creating unforgettable experiences with the world's most sophisticated AI event manager.</p>
           <div className="hiw-cta-btns">
-            <button className="hiw-cta-btn-primary" onClick={() => navigate('/host-signup')}>Start Planning Now</button>
+            <button className="hiw-cta-btn-primary" onClick={() => navigate('/signup')}>Start Planning Now</button>
             <button className="hiw-cta-btn-outline">Schedule a Demo</button>
           </div>
         </div>

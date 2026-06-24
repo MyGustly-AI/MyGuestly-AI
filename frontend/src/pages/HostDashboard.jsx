@@ -1,98 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { listEventsRequest } from '../api/events';
+import { useAuth } from '../context/AuthContext';
 import './HostDashboard.css';
-
-// ------------------------------------------------------------------
-// Static data — swap these out for API calls when you add a backend
-// ------------------------------------------------------------------
-
-const stats = [
-  { label: 'TOTAL EVENTS',    value: '24',    badge: '+12%', badgeType: 'up' },
-  { label: 'TOTAL RSVPS',     value: '1,482', badge: '+5%',  badgeType: 'up' },
-  { label: 'PENDING INVITES', value: '86',    badge: 'High',  badgeType: 'warn' },
-  { label: 'CHECKED-IN',      value: '312',   badge: 'Stable',badgeType: 'ok'  },
-];
-
-const quickActions = [
-  {
-    label: 'Create New Event',
-    desc:  'Set up a new celebration in minutes',
-    icon:  <PlusIcon />,
-    href:  '/host/create-event',
-  },
-  {
-    label: 'Scan QR Code',
-    desc:  'Instantly check-in arriving guests',
-    icon:  <QRIcon />,
-    href:  '/scan-qr',
-  },
-  {
-    label: 'View Gallery',
-    desc:  'Review AI-curated memories',
-    icon:  <GalleryIcon />,
-    href:  '/gallery',
-  },
-];
 
 const activities = [
   {
-    name:     'Bolaji Ogundele',
-    action:   'confirmed RSVP',
-    event:    "Amara & David's Wedding",
-    time:     '2 mins ago',
-    type:     'rsvp',
-    badge:    'Attending',
+    name: 'Bolaji Ogundele',
+    action: 'confirmed RSVP',
+    event: "Amara & David's Wedding",
+    time: '2 mins ago',
+    type: 'rsvp',
+    badge: 'Attending',
   },
   {
-    name:     'Kemi Adeyemi',
-    action:   'checked in',
-    event:    'Corporate AI Summit',
-    time:     '15 mins ago',
-    type:     'checkin',
+    name: 'Kemi Adeyemi',
+    action: 'checked in',
+    event: 'Corporate AI Summit',
+    time: '15 mins ago',
+    type: 'checkin',
     timeOnly: '10:42 AM',
   },
   {
-    name:   '12 new memories uploaded',
+    name: '12 new memories uploaded',
     action: '',
-    event:  "Amara & David's Wedding",
-    time:   '1 hour ago',
-    type:   'gallery',
-    extra:  '+10',
+    event: "Amara & David's Wedding",
+    time: '1 hour ago',
+    type: 'gallery',
+    extra: '+10',
   },
 ];
 
 const TABS = ['All', 'RSVPs', 'Check-ins'];
 
-// ------------------------------------------------------------------
-
 export default function HostDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('All');
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await listEventsRequest({ limit: 5 });
+        setEvents(result?.data ?? result ?? []);
+      } catch (err) {
+        setError(err.message || 'Could not load events.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const featuredEvent = events[0];
+
+  const totalEvents = events.length;
+  const totalRsvps = events.reduce((sum, e) => sum + (e.confirmedGuests || 0), 0);
+
+  const stats = [
+    { label: 'TOTAL EVENTS', value: loading ? '...' : String(totalEvents), badge: '', badgeType: 'up' },
+    { label: 'TOTAL RSVPS', value: loading ? '...' : String(totalRsvps), badge: '', badgeType: 'up' },
+    { label: 'PENDING INVITES', value: '—', badge: '', badgeType: 'warn' },
+    { label: 'CHECKED-IN', value: '—', badge: '', badgeType: 'ok' },
+  ];
 
   const filtered = activities.filter(a => {
-    if (activeTab === 'RSVPs')     return a.type === 'rsvp';
+    if (activeTab === 'RSVPs') return a.type === 'rsvp';
     if (activeTab === 'Check-ins') return a.type === 'checkin';
     return true;
   });
 
   return (
     <div className="app-layout">
-      <Sidebar role="host" user={{ name: 'Amara', plan: 'Host Account' }} />
+      <Sidebar role="host" user={{ name: user?.fullName || 'Host', plan: 'Host Account' }} />
 
       <main className="main-content">
         <div className="dashboard-inner">
 
-          {/* ── Greeting ── */}
           <div className="dashboard-greeting">
             <div className="greeting-center">
               <h1 className="dashboard-heading">
-                Welcome back, <span className="highlight">Amara!</span>
+                Welcome back, <span className="highlight">{user?.fullName?.split(' ')[0] || 'Host'}!</span>
               </h1>
-              <p className="dashboard-sub">You have 2 events active this week.</p>
+              <p className="dashboard-sub">
+                {loading ? 'Loading your events...' : `You have ${totalEvents} event${totalEvents === 1 ? '' : 's'} on your dashboard.`}
+              </p>
             </div>
             <div className="dashboard-header-icons">
-              <button className="icon-btn" onClick={() => navigate('/notifications')}>
+              <button className="icon-btn" onClick={() => navigate('/notification')}>
                 <BellIcon />
               </button>
               <button className="icon-btn" onClick={() => navigate('/settings')}>
@@ -107,13 +105,14 @@ export default function HostDashboard() {
             </div>
           </div>
 
-          {/* ── Stats row ── */}
+          {error && <div className="auth-error" style={{ marginBottom: 16 }}>{error}</div>}
+
           <div className="stats-row">
             {stats.map((s, i) => (
               <div key={i} className="stat-card">
                 <div className="stat-card-top">
                   <span className="stat-card-label">{s.label}</span>
-                  <span className={`stat-badge stat-badge--${s.badgeType}`}>{s.badge}</span>
+                  {s.badge && <span className={`stat-badge stat-badge--${s.badgeType}`}>{s.badge}</span>}
                 </div>
                 <div className="stat-card-value">{s.value}</div>
                 <div className="stat-card-rule" />
@@ -121,10 +120,8 @@ export default function HostDashboard() {
             ))}
           </div>
 
-          {/* ── Body ── */}
           <div className="dashboard-cols">
 
-            {/* LEFT column */}
             <div className="dashboard-col-main">
 
               <div className="section-row">
@@ -134,38 +131,51 @@ export default function HostDashboard() {
                 </button>
               </div>
 
-              {/* Featured event card */}
-              <div className="active-event-card">
-                <img
-                  src="/host.png"
-                  alt="Amara & David's Wedding"
-                  className="active-event-img"
-                />
-                <div className="active-event-overlay">
-                  <span className="badge-starting">Starting in 4 Days</span>
-                  <div className="active-event-bottom">
-                    <div>
-                      <h3 className="active-event-title">Amara &amp; David's Wedding</h3>
-                      <div className="active-event-meta">
-                        <span className="meta-group">
-                          <span className="meta-label">RSVPS</span>
-                          <span className="meta-val">248 / 300</span>
-                        </span>
-                        <span className="meta-group">
-                          <span className="meta-label">PHOTOS</span>
-                          <span className="meta-val">142</span>
-                        </span>
+              {loading && (
+                <div className="active-event-card" style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>
+                  Loading events...
+                </div>
+              )}
+
+              {!loading && !featuredEvent && (
+                <div className="active-event-card" style={{ padding: 32, textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: 12 }}>You haven't created any events yet.</p>
+                  <button className="btn-primary" onClick={() => navigate('/host/create-event')}>Create Your First Event</button>
+                </div>
+              )}
+
+              {!loading && featuredEvent && (
+                <div
+                  className="active-event-card"
+                  onClick={() => navigate('/host/invitation', { state: { eventId: featuredEvent.id } })}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img
+                    src={featuredEvent.coverUrl || '/host.png'}
+                    alt={featuredEvent.title}
+                    className="active-event-img"
+                  />
+                  <div className="active-event-overlay">
+                    <span className="badge-starting">{featuredEvent.status || 'Draft'}</span>
+                    <div className="active-event-bottom">
+                      <div>
+                        <h3 className="active-event-title">{featuredEvent.title}</h3>
+                        <div className="active-event-meta">
+                          <span className="meta-group">
+                            <span className="meta-label">RSVPS</span>
+                            <span className="meta-val">{featuredEvent.confirmedGuests || 0} / {featuredEvent.maxGuests}</span>
+                          </span>
+                          <span className="meta-group">
+                            <span className="meta-label">VENUE</span>
+                            <span className="meta-val">{featuredEvent.venueName}</span>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="response-pill">
-                      <span className="response-pct">96%</span>
-                      <span className="response-lbl">Response Rate</span>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Recent activity */}
               <div className="section-row" style={{ marginTop: 28 }}>
                 <span className="section-label-sm">Recent Activity</span>
                 <div className="activity-tabs">
@@ -194,9 +204,9 @@ export default function HostDashboard() {
                       <div className="activity-meta">{a.event} · {a.time}</div>
                     </div>
                     <div className="activity-right">
-                      {a.badge    && <span className="badge-attending">{a.badge}</span>}
+                      {a.badge && <span className="badge-attending">{a.badge}</span>}
                       {a.timeOnly && <span className="activity-time-only">{a.timeOnly}</span>}
-                      {a.extra    && (
+                      {a.extra && (
                         <div className="gallery-chips">
                           <span className="gallery-dot" />
                           <span className="gallery-dot" />
@@ -211,23 +221,30 @@ export default function HostDashboard() {
               <button className="view-full-log-btn">View Full Activity Log</button>
             </div>
 
-            {/* RIGHT column */}
             <div className="dashboard-col-side">
               <div className="section-label-sm" style={{ marginBottom: 14 }}>Quick Actions</div>
               <div className="quick-actions">
-                {quickActions.map((q, i) => (
-                  <button
-                    key={i}
-                    className="quick-action-btn"
-                    onClick={() => navigate(q.href)}
-                  >
-                    <div className="quick-action-icon">{q.icon}</div>
-                    <div>
-                      <div className="quick-action-label">{q.label}</div>
-                      <div className="quick-action-desc">{q.desc}</div>
-                    </div>
-                  </button>
-                ))}
+                <button className="quick-action-btn" onClick={() => navigate('/host/create-event')}>
+                  <div className="quick-action-icon"><PlusIcon /></div>
+                  <div>
+                    <div className="quick-action-label">Create New Event</div>
+                    <div className="quick-action-desc">Set up a new celebration in minutes</div>
+                  </div>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/scan-qr')}>
+                  <div className="quick-action-icon"><QRIcon /></div>
+                  <div>
+                    <div className="quick-action-label">Scan QR Code</div>
+                    <div className="quick-action-desc">Instantly check-in arriving guests</div>
+                  </div>
+                </button>
+                <button className="quick-action-btn" onClick={() => navigate('/gallery')}>
+                  <div className="quick-action-icon"><GalleryIcon /></div>
+                  <div>
+                    <div className="quick-action-label">View Gallery</div>
+                    <div className="quick-action-desc">Review AI-curated memories</div>
+                  </div>
+                </button>
               </div>
 
               <div className="upgrade-banner">
@@ -235,7 +252,7 @@ export default function HostDashboard() {
                 <p className="upgrade-desc">
                   Get unlimited AI storage and premium 4K memory reels for your events.
                 </p>
-                <button className="upgrade-link-btn">Explore Plans →</button>
+                <button className="upgrade-link-btn" onClick={() => navigate('/pricing')}>Explore Plans →</button>
               </div>
             </div>
 
@@ -245,8 +262,6 @@ export default function HostDashboard() {
     </div>
   );
 }
-
-// ── Icons ──────────────────────────────────────────────────────────
 
 function ActivityIcon({ type }) {
   if (type === 'rsvp') {
