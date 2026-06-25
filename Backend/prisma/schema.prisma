@@ -68,6 +68,9 @@ model Event {
   notifications Notification[]
   feedbacks     Feedback[]
 
+  masterTrackUrl String?     
+  voiceNotes     VoiceNote[]
+
   @@index([hostId])
   @@index([startDate])
   @@index([updatedAt])
@@ -185,6 +188,7 @@ model Media {
   pHash           String?
   capturedAt      DateTime?
   clutchName      String?
+  faceEncodings    Json?
 
   eventId String
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -363,4 +367,15 @@ enum FeedbackCategory {
   CATERING
   ENTERTAINMENT
   ORGANIZATION
+}
+
+model VoiceNote {
+  id              String   @id @default(uuid())
+  eventId         String
+  voiceUrl        String   
+  instrumentalUrl String   
+  createdAt       DateTime @default(now())
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
 }
