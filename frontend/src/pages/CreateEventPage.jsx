@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { createEventRequest } from '../api/events';
+import { api } from '../api/client';
 import './CreateEventPage.css';
 
 const categories = [
@@ -60,13 +61,42 @@ export default function CreateEventPage() {
 
     setSubmitting(true);
     try {
+      let finalCoverUrl = '';
+
+      if (coverImage) {
+        // 1. Fetch pre-signed upload signature from backend using temporary ID "temp"
+        const { uploadUrl, signature, timestamp, apiKey, folder } = await api.get(
+          '/events/temp/media/upload-url'
+        );
+
+        // 2. Upload cover image directly to Cloudinary
+        const formData = new FormData();
+        formData.append('file', coverImage);
+        formData.append('api_key', apiKey);
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
+        formData.append('folder', folder);
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload cover image to Cloudinary');
+        }
+
+        const uploadData = await uploadRes.json();
+        finalCoverUrl = uploadData.secure_url;
+      }
+
       const event = await createEventRequest({
         title,
         description,
         eventCategory: category,
         venueName,
         address,
-        coverUrl: coverPreview || '',
+        coverUrl: finalCoverUrl,
         themeAccent: color,
         rsvpDeadline: rsvpDeadline ? new Date(rsvpDeadline).toISOString() : null,
         startDate: startDate.toISOString(),
