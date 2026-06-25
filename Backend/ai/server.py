@@ -72,15 +72,20 @@ def compile_album_soundtrack(payload: CloudMasterMixPayload):
         voice_notes_list = []
         
         for item in payload.voiceNotes:
-            voice_res = requests.get(item.voiceNoteUrl, timeout=10)
-            inst_res = requests.get(item.instrumentalUrl, timeout=10)
-            
-            if voice_res.ok and inst_res.ok:
-                voice_notes_list.append({
-                    "voice_bytes": voice_res.content,
-                    "instrumental_bytes": inst_res.content,
-                    "raw_voice_bytes": voice_res.content
-                })
+            if not item.voiceNoteUrl or not item.instrumentalUrl:
+                continue
+            try:
+                voice_res = requests.get(item.voiceNoteUrl, timeout=10)
+                inst_res = requests.get(item.instrumentalUrl, timeout=10)
+                
+                if voice_res.ok and inst_res.ok:
+                    voice_notes_list.append({
+                        "voice_bytes": voice_res.content,
+                        "instrumental_bytes": inst_res.content,
+                        "raw_voice_bytes": voice_res.content
+                    })
+            except Exception as item_err:
+                print(f"⚠️ Failed to download sound asset: {item_err}")
         
         if not voice_notes_list:
             raise HTTPException(status_code=400, detail="No active cloud audio paths could be successfully retrieved.")

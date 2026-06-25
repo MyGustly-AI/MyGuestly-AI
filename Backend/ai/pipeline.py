@@ -89,11 +89,19 @@ class ImageIngestionPipeline:
         """Compares hashes using Hamming distance to spot matches."""
         if not existing_hashes:
             return False
-        new_hash = imagehash.hex_to_hash(new_hash_str)
+        try:
+            new_hash = imagehash.hex_to_hash(new_hash_str)
+        except Exception:
+            return False
         for old_hash_str in existing_hashes:
-            old_hash = imagehash.hex_to_hash(old_hash_str)
-            if (new_hash - old_hash) <= self.duplicate_threshold:
-                return True
+            if not old_hash_str or not isinstance(old_hash_str, str):
+                continue
+            try:
+                old_hash = imagehash.hex_to_hash(old_hash_str)
+                if (new_hash - old_hash) <= self.duplicate_threshold:
+                    return True
+            except Exception:
+                continue
         return False
 
     def extract_timestamp(self, image_bytes):
