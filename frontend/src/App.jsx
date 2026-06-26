@@ -25,6 +25,8 @@ import SettingsPage from './pages/SettingsPage';
 import NotificationPage from './pages/NotificationPage';
 import PricingPage from './pages/PricingPage';
 import ScanQRPage from './pages/ScanQRPage';
+import RSVPPage from './pages/RSVPPage';
+import AudioPlayer from './components/AudioPlayer';
 
 // Waits for auth to load, then redirects to /login if not authenticated
 function ProtectedRoute({ children }) {
@@ -60,6 +62,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/rsvp/:eventCode/:token" element={<RSVPPage />} />
 
           {/* Protected routes — require auth */}
           <Route path="/host/home" element={<ProtectedRoute><HostHomePage /></ProtectedRoute>} />
@@ -76,6 +79,7 @@ export default function App() {
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/scan-qr" element={<ProtectedRoute><ScanQRPage /></ProtectedRoute>} />
         </Routes>
+        <AudioPlayer />
       </BrowserRouter>
     </AuthProvider>
   );
