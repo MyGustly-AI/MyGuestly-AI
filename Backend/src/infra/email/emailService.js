@@ -37,17 +37,17 @@ function buildRawMessage({ from, to, subject, html, text, attachments = [] }) {
     `From: ${from}`,
     `To: ${toAddress}`,
     `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
+    "MIME-Version: 1.0",
   ];
 
   if (attachments.length === 0) {
     // Simple HTML email, no attachments
-    lines.push(`Content-Type: text/html; charset=UTF-8`, "", html || text || "");
+    lines.push("Content-Type: text/html; charset=UTF-8", "", html || text || "");
   } else {
     // Multipart email with attachments
     lines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`, "");
     lines.push(`--${boundary}`);
-    lines.push(`Content-Type: text/html; charset=UTF-8`, "", html || text || "");
+    lines.push("Content-Type: text/html; charset=UTF-8", "", html || text || "");
 
     for (const att of attachments) {
       const content = Buffer.isBuffer(att.content)
@@ -57,7 +57,7 @@ function buildRawMessage({ from, to, subject, html, text, attachments = [] }) {
       lines.push(`--${boundary}`);
       lines.push(
         `Content-Type: ${att.contentType || "application/octet-stream"}; name="${att.filename}"`,
-        `Content-Transfer-Encoding: base64`,
+        "Content-Transfer-Encoding: base64",
         `Content-Disposition: attachment; filename="${att.filename}"`,
         "",
         content
