@@ -43,7 +43,7 @@ export default function EventsHistoryPage() {
       rsvpProgress: 40,
       confirmed: 200,
       total: 500,
-      status: "completed"
+      status: "upcoming"
     }
   ];
 
@@ -64,7 +64,6 @@ export default function EventsHistoryPage() {
               <p className="page-subtitle">View all your past events and their performance</p>
             </div>
 
-            {/* Filter Tabs */}
             <div className="filter-tabs">
               <button 
                 className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
@@ -76,74 +75,75 @@ export default function EventsHistoryPage() {
                 className={`filter-tab ${filter === 'completed' ? 'active' : ''}`}
                 onClick={() => setFilter('completed')}
               >
-                Completed
+                ✅ Completed
               </button>
               <button 
                 className={`filter-tab ${filter === 'upcoming' ? 'active' : ''}`}
                 onClick={() => setFilter('upcoming')}
               >
-                Upcoming
+                ⏳ Upcoming
               </button>
             </div>
 
-            {/* Events List */}
             <div className="events-list">
-              {events.map(event => (
-                <div key={event.id} className="event-history-card">
-                  <div className="event-history-header">
-                    <div className="event-title-section">
-                      <h3 className="event-history-title">{event.title}</h3>
-                      <span className={`event-status ${event.status}`}>
-                        {event.status === 'completed' ? '✅ Completed' : '⏳ Upcoming'}
-                      </span>
-                    </div>
-                    <p className="event-history-date">📅 {event.date}</p>
-                  </div>
-
-                  <div className="event-history-body">
-                    <div className="rsvp-section">
-                      <div className="rsvp-header">
-                        <span>RSVP Progress</span>
-                        <span className="rsvp-percent">{event.rsvpProgress}%</span>
+              {events
+                .filter(event => filter === 'all' || event.status === filter)
+                .map(event => (
+                  <div key={event.id} className="event-history-card">
+                    <div className="event-history-header">
+                      <div className="event-title-section">
+                        <h3 className="event-history-title">{event.title}</h3>
+                        <span className={`event-status ${event.status}`}>
+                          {event.status === 'completed' ? '✅ Completed' : '⏳ Upcoming'}
+                        </span>
                       </div>
-                      <div className="progress-bar-wrap">
-                        <div 
-                          className="progress-bar-fill" 
-                          style={{ 
-                            width: `${event.rsvpProgress}%`,
-                            background: getProgressColor(event.rsvpProgress)
-                          }}
-                        />
-                      </div>
-                      <p className="rsvp-count">
-                        {event.confirmed.toLocaleString()} / {event.total.toLocaleString()} Guests attended
-                      </p>
+                      <p className="event-history-date">📅 {event.date}</p>
                     </div>
 
-                    {event.memories && (
-                      <div className="memories-section">
-                        <span className="memories-icon">📸</span>
-                        <span className="memories-count">{event.memories.toLocaleString()}</span>
-                        <span className="memories-label">Memories Captured</span>
-                        <button className="btn-ghost gallery-link">View Gallery →</button>
+                    <div className="event-history-body">
+                      <div className="rsvp-section">
+                        <div className="rsvp-header">
+                          <span>RSVP Progress</span>
+                          <span className="rsvp-percent">{event.rsvpProgress}%</span>
+                        </div>
+                        <div className="progress-bar-wrap">
+                          <div 
+                            className="progress-bar-fill" 
+                            style={{ 
+                              width: `${event.rsvpProgress}%`,
+                              background: getProgressColor(event.rsvpProgress)
+                            }}
+                          />
+                        </div>
+                        <p className="rsvp-count">
+                          {event.confirmed.toLocaleString()} / {event.total.toLocaleString()} Guests attended
+                        </p>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="event-history-actions">
-                    <button className="btn-outline" style={{ padding: '8px 16px', fontSize: '13px' }}>
-                      View Details
-                    </button>
-                    <button className="btn-ghost" style={{ padding: '8px 16px', fontSize: '13px' }}>
-                      Share
-                    </button>
+                      {event.memories && (
+                        <div className="memories-section">
+                          <span className="memories-icon">📸</span>
+                          <span className="memories-count">{event.memories.toLocaleString()}</span>
+                          <span className="memories-label">Memories Captured</span>
+                          <button className="btn-ghost gallery-link">View Gallery →</button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="event-history-actions">
+                      <button className="btn-outline" style={{ padding: '8px 16px', fontSize: '13px' }}>
+                        View Details
+                      </button>
+                      <button className="btn-ghost" style={{ padding: '8px 16px', fontSize: '13px' }}>
+                        Share
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
+      }

@@ -3,6 +3,7 @@
 .events-history-container {
   max-width: 900px;
   margin: 0 auto;
+  padding: 20px 0;
 }
 
 .page-header {
@@ -64,6 +65,7 @@
   border-radius: 12px;
   padding: 20px;
   transition: box-shadow 0.2s;
+  overflow: hidden;
 }
 
 .event-history-card:hover {
@@ -89,6 +91,7 @@
 .event-history-title {
   font-size: 18px;
   margin: 0;
+  word-break: break-word;
 }
 
 .event-status {
@@ -96,6 +99,7 @@
   padding: 4px 10px;
   border-radius: 12px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .event-status.completed {
@@ -104,14 +108,15 @@
 }
 
 .event-status.upcoming {
-  background: #fef9c3;
-  color: #ca8a04;
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .event-history-date {
   color: var(--text-muted);
   font-size: 14px;
   margin: 0;
+  white-space: nowrap;
 }
 
 .event-history-body {
@@ -177,6 +182,7 @@
   .event-history-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 4px;
   }
 
   .event-title-section {
@@ -185,9 +191,17 @@
     gap: 4px;
   }
 
+  .event-history-title {
+    font-size: 16px;
+  }
+
+  .event-history-date {
+    white-space: normal;
+  }
+
   .event-history-body {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .memories-section {
@@ -226,10 +240,14 @@
   }
 
   .event-history-title {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .memories-count {
     font-size: 16px;
   }
-}
+
+  .rsvp-header {
+    font-size: 12px;
+  }
+  }
