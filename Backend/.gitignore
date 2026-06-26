@@ -8,3 +8,7 @@ logs/
 *.log
 
 tempjwt2.mjs
+*.pt
+__pycache__/
+ai/__pycache__/
+ai/*.pt
