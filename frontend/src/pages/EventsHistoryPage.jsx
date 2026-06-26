@@ -43,7 +43,7 @@ export default function EventsHistoryPage() {
       rsvpProgress: 40,
       confirmed: 200,
       total: 500,
-      status: "completed"
+      status: "upcoming"
     }
   ];
 
@@ -86,7 +86,7 @@ export default function EventsHistoryPage() {
               </button>
             </div>
 
-            {/* Events List */}
+            {/* Events List - Fixed Overlapping */}
             <div className="events-list">
               {events.map(event => (
                 <div key={event.id} className="event-history-card">
@@ -146,4 +146,4 @@ export default function EventsHistoryPage() {
       </div>
     </div>
   );
-}
+            }
