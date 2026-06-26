@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import AppHeader from '../components/AppHeader';
 import Sidebar from '../components/Sidebar';
+import { useAuth } from '../context/AuthContext';
 import './SettingsPage.css';
 
 const sections = ['Account', 'Email Alerts', 'Your Events', 'Security'];
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('Account');
   const [notif1, setNotif1] = useState(true);
   const [notif2, setNotif2] = useState(false);
@@ -47,7 +49,7 @@ export default function SettingsPage() {
                 <div className="settings-row">
                   <div>
                     <div className="settings-label">Email Address</div>
-                    <div className="settings-value">amara@guestly.ai</div>
+                    <div className="settings-value">{user?.email || 'amara@guestly.ai'}</div>
                   </div>
                   <button className="settings-action-btn">Update</button>
                 </div>
