@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 import { logger } from "../loggers/logger.js";
 import env from "../../config/env.js";
+import dns from "dns";
+
+// Fix Node 17+ ENETUNREACH IPv6 issue for SMTP
+dns.setDefaultResultOrder("ipv4first");
 
 class EmailService {
     constructor() {

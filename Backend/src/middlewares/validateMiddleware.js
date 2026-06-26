@@ -4,6 +4,10 @@ export const validate = (schema) => {
         const result = schema.safeParse(req.body);
 
         if (!result.success) {
+            console.error(`Validation failed for ${req.method} ${req.originalUrl}:`, {
+                body: req.body,
+                errors: result.error.flatten().fieldErrors
+            });
             return res.status(400).json({
                 success: false,
                 message: "Validation failed",
