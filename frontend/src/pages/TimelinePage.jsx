@@ -1,10 +1,10 @@
-// src/pages/TimelinePage.jsx
+// src/pages/TimelinePage.jsx - Fixed Live Voice Notes
 import React, { useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import './TimelinePage.css';
 
 export default function TimelinePage() {
-  const [activeTab, setActiveTab] = useState('timeline');
+  const [activeTab, setActiveTab] = useState('voicenotes');
   const [playingVoiceNote, setPlayingVoiceNote] = useState(null);
 
   const voiceNotes = [
@@ -37,30 +37,6 @@ export default function TimelinePage() {
     }
   ];
 
-  const timelineEvents = [
-    {
-      id: 1,
-      time: "11:00 AM",
-      title: "The Town Crier's Arrival",
-      description: "The abridged version of the morning reflection and modern love.",
-      type: "ceremony"
-    },
-    {
-      id: 2,
-      time: "12:30 PM",
-      title: "Traditional Greetings",
-      description: "Elders blessing the couple with traditional prayers.",
-      type: "tradition"
-    },
-    {
-      id: 3,
-      time: "2:15 PM",
-      title: "Feast Begins",
-      description: "Guests enjoying the sumptuous meal and entertainment.",
-      type: "feast"
-    }
-  ];
-
   const toggleVoiceNote = (id) => {
     setPlayingVoiceNote(playingVoiceNote === id ? null : id);
   };
@@ -69,15 +45,13 @@ export default function TimelinePage() {
     <div className="app-layout">
       <Sidebar />
       <div className="main-content">
-        <div className="page-inner">
+        <div className="page-inner" style={{ paddingTop: '70px' }}> {/* Extra padding for mobile menu */}
           <div className="timeline-container">
-            {/* Header */}
             <div className="timeline-header">
               <h1 className="timeline-title">Abike & Tunde's Wedding</h1>
               <p className="timeline-date">June 13, 2026</p>
             </div>
 
-            {/* Tabs */}
             <div className="timeline-tabs">
               <button 
                 className={`tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
@@ -95,33 +69,30 @@ export default function TimelinePage() {
                 className={`tab-btn ${activeTab === 'voicenotes' ? 'active' : ''}`}
                 onClick={() => setActiveTab('voicenotes')}
               >
-                Heartfelt Voice Notes
+                💝 Voice Notes
               </button>
             </div>
 
-            {/* Voice Notes Section */}
             {activeTab === 'voicenotes' && (
               <div className="voicenotes-section">
                 <div className="voicenotes-header">
-                  <h2>Voice Notes Compilations from Loved Ones</h2>
+                  <h2>Heartfelt Voice Notes</h2>
                   <span className="live-badge">🔴 Live</span>
                 </div>
-                <p className="voicenotes-sub">
-                  Compilations Synced
-                </p>
+                <p className="voicenotes-sub">Voice notes compilations from loved ones</p>
 
                 <div className="voicenotes-list">
                   {voiceNotes.map((note) => (
                     <div key={note.id} className="voicenote-card">
                       <div className="voicenote-info">
-                        <h3 className="voicenote-title">{note.title}</h3>
+                        <div className="voicenote-title-row">
+                          <h3 className="voicenote-title">{note.title}</h3>
+                          {note.isLive && <span className="live-dot">● Live</span>}
+                        </div>
                         <p className="voicenote-description">{note.description}</p>
                         <div className="voicenote-meta">
-                          <span className="voicenote-time">{note.time}</span>
-                          <span className="voicenote-author">• {note.author}</span>
-                          {note.isLive && (
-                            <span className="live-indicator">● Live</span>
-                          )}
+                          <span className="voicenote-time">🕐 {note.time}</span>
+                          <span className="voicenote-author">👤 {note.author}</span>
                         </div>
                       </div>
                       <div className="voicenote-controls">
@@ -129,17 +100,17 @@ export default function TimelinePage() {
                           className={`play-btn ${playingVoiceNote === note.id ? 'playing' : ''}`}
                           onClick={() => toggleVoiceNote(note.id)}
                         >
-                          {playingVoiceNote === note.id ? '⏸️' : '▶️'}
+                          {playingVoiceNote === note.id ? '⏹' : '▶'}
                         </button>
                         <span className="voicenote-duration">{note.duration}</span>
                         <div className="voicenote-waveform">
                           <div className="waveform-bars">
-                            {[...Array(20)].map((_, i) => (
+                            {[...Array(16)].map((_, i) => (
                               <div 
                                 key={i} 
                                 className={`waveform-bar ${playingVoiceNote === note.id ? 'active' : ''}`}
                                 style={{ 
-                                  height: `${Math.random() * 20 + 5}px`,
+                                  height: `${Math.random() * 15 + 5}px`,
                                   animationDelay: `${i * 0.1}s`
                                 }}
                               />
@@ -153,33 +124,46 @@ export default function TimelinePage() {
               </div>
             )}
 
-            {/* AI Timeline Section */}
             {activeTab === 'timeline' && (
               <div className="timeline-section">
                 <div className="timeline-line">
-                  {timelineEvents.map((event, index) => (
-                    <div key={event.id} className="timeline-event">
-                      <div className="timeline-marker">
-                        <span className="timeline-dot"></span>
-                        {index < timelineEvents.length - 1 && (
-                          <span className="timeline-connector"></span>
-                        )}
-                      </div>
-                      <div className="timeline-content">
-                        <span className="timeline-event-time">{event.time}</span>
-                        <h3 className="timeline-event-title">{event.title}</h3>
-                        <p className="timeline-event-desc">{event.description}</p>
-                        <span className={`timeline-event-type ${event.type}`}>
-                          {event.type}
-                        </span>
-                      </div>
+                  <div className="timeline-event">
+                    <div className="timeline-marker">
+                      <span className="timeline-dot"></span>
                     </div>
-                  ))}
+                    <div className="timeline-content">
+                      <span className="timeline-event-time">11:00 AM</span>
+                      <h3 className="timeline-event-title">The Town Crier's Arrival</h3>
+                      <p className="timeline-event-desc">The abridged version of the morning reflection and modern love.</p>
+                      <span className="timeline-event-type ceremony">Ceremony</span>
+                    </div>
+                  </div>
+                  <div className="timeline-event">
+                    <div className="timeline-marker">
+                      <span className="timeline-dot"></span>
+                    </div>
+                    <div className="timeline-content">
+                      <span className="timeline-event-time">12:30 PM</span>
+                      <h3 className="timeline-event-title">Traditional Greetings</h3>
+                      <p className="timeline-event-desc">Elders blessing the couple with traditional prayers.</p>
+                      <span className="timeline-event-type tradition">Tradition</span>
+                    </div>
+                  </div>
+                  <div className="timeline-event">
+                    <div className="timeline-marker">
+                      <span className="timeline-dot"></span>
+                    </div>
+                    <div className="timeline-content">
+                      <span className="timeline-event-time">2:15 PM</span>
+                      <h3 className="timeline-event-title">Feast Begins</h3>
+                      <p className="timeline-event-desc">Guests enjoying the sumptuous meal and entertainment.</p>
+                      <span className="timeline-event-type feast">Feast</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Guest Uploads Section */}
             {activeTab === 'uploads' && (
               <div className="uploads-section">
                 <div className="empty-uploads">
@@ -195,4 +179,4 @@ export default function TimelinePage() {
       </div>
     </div>
   );
-}
+    }
