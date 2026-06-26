@@ -24,12 +24,12 @@ class AIController extends BaseController {
     const { mediaItems } = req.body;
 
     if (!mediaItems || !Array.isArray(mediaItems)) {
-      return this.badRequest(res, 'Please provide an array of mediaItems.');
+      return this.badRequest(res, "Please provide an array of mediaItems.");
     }
 
     const categorizedMoments = await this.aiService.organizeEventMoments(mediaItems);
     
-    return this.success(res, 'Media organized successfully', categorizedMoments);
+    return this.success(res, "Media organized successfully", categorizedMoments);
   });
 }
 
