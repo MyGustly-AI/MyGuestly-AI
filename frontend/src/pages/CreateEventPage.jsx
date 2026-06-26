@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
+import { createEventRequest } from '../api/events';
+import { api } from '../api/client';
 import './CreateEventPage.css';
 
 export default function CreateEventPage() {
@@ -20,6 +22,7 @@ export default function CreateEventPage() {
   const [coverImage, setCoverImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const categories = ['Wedding', 'Gala', 'Birthday', 'Corporate', 'Church'];
 
@@ -43,18 +46,54 @@ export default function CreateEventPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
     
     try {
-      // API call would go here
-      console.log('Event Data:', formData);
-      console.log('Cover Image:', coverImage);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      let finalCoverUrl = '';
+
+      if (coverImage) {
+        // 1. Fetch pre-signed upload signature from backend using temporary ID "temp"
+        const uploadUrlData = await api.get('/events/temp/media/upload-url');
+        const { uploadUrl, signature, timestamp, apiKey, folder } = uploadUrlData;
+
+        // 2. Upload cover image directly to Cloudinary
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', coverImage);
+        formDataUpload.append('api_key', apiKey);
+        formDataUpload.append('timestamp', timestamp);
+        formDataUpload.append('signature', signature);
+        formDataUpload.append('folder', folder);
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formDataUpload,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload cover image to Cloudinary');
+        }
+
+        const uploadData = await uploadRes.json();
+        finalCoverUrl = uploadData.secure_url;
+      }
+
+      await createEventRequest({
+        title: formData.eventName,
+        description: formData.description || '',
+        eventCategory: formData.category,
+        venueName: formData.venueName,
+        address: formData.address,
+        coverUrl: finalCoverUrl,
+        themeAccent: formData.themeAccent,
+        startDate: new Date(formData.startTime).toISOString(),
+        endDate: new Date(formData.endTime).toISOString(),
+        maxGuests: parseInt(formData.maxGuests, 10),
+      });
+
       navigate('/host/dashboard');
-    } catch (error) {
-      console.error('Error creating event:', error);
+    } catch (err) {
+      console.error('Error creating event:', err);
+      setError(err.message || 'Error creating event. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -84,6 +123,19 @@ export default function CreateEventPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="event-form">
+              {error && (
+                <div className="auth-error" style={{
+                  background: '#fee2e2',
+                  color: '#dc2626',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  width: '100%',
+                  fontSize: '14px'
+                }}>
+                  {error}
+                </div>
+              )}
               {/* Row 1: Event Name & Category */}
               <div className="form-row">
                 <div className="form-group">
