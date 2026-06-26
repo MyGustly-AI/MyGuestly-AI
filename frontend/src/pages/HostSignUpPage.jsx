@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 import './AuthPages.css';
 import './HostSignUppagee.css';
@@ -15,12 +16,41 @@ const HOST_TYPES = [
 
 export default function HostSignUpPage() {
   const navigate = useNavigate();
+  const { register, error, setError } = useAuth();
   const [selectedType, setSelectedType] = useState('Wedding Planner');
+  const [fullName, setFullName] = useState('');
+  const [company, setCompany] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (!agreed) return;
-    navigate('/host/dashboard');
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setError(null);
+    if (!agreed) {
+      setError('You must agree to the Terms of Service and Privacy Policy.');
+      return;
+    }
+    if (!fullName || !email || !password) {
+      setError('Please fill in all required fields (Name, Email, Password).');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await register({
+        fullName,
+        email,
+        phone: phone || null,
+        password,
+        hostType: selectedType,
+        company,
+      });
+      navigate('/host/dashboard');
+    } catch (err) {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -68,7 +98,19 @@ export default function HostSignUpPage() {
           <h2 className="auth-heading">Become a Host</h2>
           <p className="auth-sub">Sign up to start creating unforgettable experiences.</p>
 
-          <div className="auth-form">
+          <form className="auth-form" onSubmit={handleSubmit}>
+            {error && (
+              <div className="auth-error" style={{
+                background: '#fee2e2',
+                color: '#dc2626',
+                padding: '12px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
 
             {/* Google button */}
             <GoogleAuthButton label="Sign up with Google" />
@@ -95,30 +137,63 @@ export default function HostSignUpPage() {
             {/* Full Name */}
             <div className="form-group">
               <label className="label">Full Name</label>
-              <input className="input-field" type="text" placeholder="Adewale Jackson" />
+              <input
+                className="input-field"
+                type="text"
+                placeholder="Adewale Jackson"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
             </div>
 
             {/* Company */}
             <div className="form-group">
               <label className="label">Company / Organisation Name</label>
-              <input className="input-field" type="text" placeholder="Enter your company name" />
+              <input
+                className="input-field"
+                type="text"
+                placeholder="Enter your company name"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+              />
             </div>
 
             {/* Email */}
             <div className="form-group">
               <label className="label">Email Address</label>
-              <input className="input-field" type="email" placeholder="host@myguestly.ai" />
+              <input
+                className="input-field"
+                type="email"
+                placeholder="host@myguestly.ai"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
             {/* Phone + Password row */}
             <div className="form-row">
               <div className="form-group">
                 <label className="label">Phone Number</label>
-                <input className="input-field" type="tel" placeholder="+234 ..." />
+                <input
+                  className="input-field"
+                  type="tel"
+                  placeholder="+234 ..."
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
               <div className="form-group">
                 <label className="label">Password</label>
-                <input className="input-field" type="password" placeholder="••••••••" />
+                <input
+                  className="input-field"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </div>
             </div>
 
@@ -140,11 +215,11 @@ export default function HostSignUpPage() {
 
             {/* CTA */}
             <button
-              type="button"
+              type="submit"
               className="btn-primary auth-submit"
-              onClick={handleSubmit}
+              disabled={submitting}
             >
-              Create Host Account
+              {submitting ? 'Creating Account...' : 'Create Host Account'}
             </button>
 
             {/* Bottom social proof */}
@@ -168,7 +243,7 @@ export default function HostSignUpPage() {
               <a href="/login" className="auth-link">Sign In</a>
             </p>
 
-          </div>
+          </form>
         </div>
       </div>
 
