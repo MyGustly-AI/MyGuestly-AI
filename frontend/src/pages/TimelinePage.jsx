@@ -1,4 +1,4 @@
-// src/pages/TimelinePage.jsx - Fixed Live Voice Notes
+// src/pages/TimelinePage.jsx
 import React, { useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import './TimelinePage.css';
@@ -45,7 +45,7 @@ export default function TimelinePage() {
     <div className="app-layout">
       <Sidebar />
       <div className="main-content">
-        <div className="page-inner" style={{ paddingTop: '70px' }}> {/* Extra padding for mobile menu */}
+        <div className="page-inner">
           <div className="timeline-container">
             <div className="timeline-header">
               <h1 className="timeline-title">Abike & Tunde's Wedding</h1>
@@ -57,13 +57,13 @@ export default function TimelinePage() {
                 className={`tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
                 onClick={() => setActiveTab('timeline')}
               >
-                AI Timeline
+                ⏳ AI Timeline
               </button>
               <button 
                 className={`tab-btn ${activeTab === 'uploads' ? 'active' : ''}`}
                 onClick={() => setActiveTab('uploads')}
               >
-                Guest Uploads
+                📤 Guest Uploads
               </button>
               <button 
                 className={`tab-btn ${activeTab === 'voicenotes' ? 'active' : ''}`}
@@ -135,7 +135,7 @@ export default function TimelinePage() {
                       <span className="timeline-event-time">11:00 AM</span>
                       <h3 className="timeline-event-title">The Town Crier's Arrival</h3>
                       <p className="timeline-event-desc">The abridged version of the morning reflection and modern love.</p>
-                      <span className="timeline-event-type ceremony">Ceremony</span>
+                      <span className="timeline-event-type ceremony">🎭 Ceremony</span>
                     </div>
                   </div>
                   <div className="timeline-event">
@@ -146,7 +146,7 @@ export default function TimelinePage() {
                       <span className="timeline-event-time">12:30 PM</span>
                       <h3 className="timeline-event-title">Traditional Greetings</h3>
                       <p className="timeline-event-desc">Elders blessing the couple with traditional prayers.</p>
-                      <span className="timeline-event-type tradition">Tradition</span>
+                      <span className="timeline-event-type tradition">🤝 Tradition</span>
                     </div>
                   </div>
                   <div className="timeline-event">
@@ -157,7 +157,7 @@ export default function TimelinePage() {
                       <span className="timeline-event-time">2:15 PM</span>
                       <h3 className="timeline-event-title">Feast Begins</h3>
                       <p className="timeline-event-desc">Guests enjoying the sumptuous meal and entertainment.</p>
-                      <span className="timeline-event-type feast">Feast</span>
+                      <span className="timeline-event-type feast">🍽️ Feast</span>
                     </div>
                   </div>
                 </div>
@@ -179,4 +179,4 @@ export default function TimelinePage() {
       </div>
     </div>
   );
-    }
+        }
