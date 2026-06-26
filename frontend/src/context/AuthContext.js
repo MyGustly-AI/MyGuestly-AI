@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
   const signup = async (userData) => {
     setError(null);
     try {
-      const response = await axios.post(`${API_URL}/auth/signup`, userData);
+      const response = await axios.post(`${API_URL}/auth/register`, userData);
       const { accessToken, user } = response.data.data;
       
       localStorage.setItem('token', accessToken);
