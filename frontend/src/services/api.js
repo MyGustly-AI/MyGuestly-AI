@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Use environment variable for the base URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

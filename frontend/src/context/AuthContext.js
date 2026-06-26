@@ -5,7 +5,7 @@ import axios from 'axios';
 const AuthContext = createContext();
 
 // API Base URL
-const API_URL = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api/v1';
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

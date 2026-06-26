@@ -1,7 +1,7 @@
 // src/services/axios-config.js
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api/v1';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
