@@ -10,12 +10,36 @@
       "value": "https://myguestly-ai.onrender.com/api/v1",
       "type": "string"
     },
-    { "key": "ACCESS_TOKEN", "value": "", "type": "string" },
-    { "key": "EVENT_ID", "value": "", "type": "string" },
-    { "key": "GUEST_ID", "value": "", "type": "string" },
-    { "key": "INVITATION_TOKEN", "value": "", "type": "string" },
-    { "key": "MEDIA_ID", "value": "", "type": "string" },
-    { "key": "MEMORY_ID", "value": "", "type": "string" }
+    {
+      "key": "ACCESS_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "EVENT_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "GUEST_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "INVITATION_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "MEDIA_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "MEMORY_ID",
+      "value": "",
+      "type": "string"
+    }
   ],
   "item": [
     {
@@ -42,15 +66,25 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"fullName\": \"Ada Lovelace\",\n  \"email\": \"ada@example.com\",\n  \"password\": \"StrongPass123\",\n  \"phone\": \"+2348012345678\"\n}"
             },
             "url": {
               "raw": "{{BASE_URL}}/auth/register",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             }
           }
         },
@@ -75,15 +109,25 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"ada@example.com\",\n  \"password\": \"StrongPass123\"\n}"
             },
             "url": {
               "raw": "{{BASE_URL}}/auth/login",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         },
@@ -92,12 +136,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/auth/refresh",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "refresh"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
             }
           }
         },
@@ -118,12 +170,20 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/auth/me",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "me"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
             }
           }
         },
@@ -132,8 +192,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -141,8 +207,13 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/auth/profile",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "profile"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ]
             }
           }
         },
@@ -151,8 +222,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -160,8 +237,13 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/auth/password",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "password"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "password"
+              ]
             }
           }
         },
@@ -172,10 +254,18 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/auth/verify-email?token=PASTE_TOKEN_FROM_EMAIL_HERE",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "verify-email"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ],
               "query": [
-                { "key": "token", "value": "PASTE_TOKEN_FROM_EMAIL_HERE" }
+                {
+                  "key": "token",
+                  "value": "PASTE_TOKEN_FROM_EMAIL_HERE"
+                }
               ]
             }
           }
@@ -184,15 +274,25 @@
           "name": "Forgot Password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"ada@example.com\"\n}"
             },
             "url": {
               "raw": "{{BASE_URL}}/auth/forgot-password",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "forgot-password"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
             }
           }
         },
@@ -200,15 +300,25 @@
           "name": "Reset Password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"token\": \"PASTE_TOKEN_FROM_EMAIL_HERE\",\n  \"newPassword\": \"NewStrongPass456\"\n}"
             },
             "url": {
               "raw": "{{BASE_URL}}/auth/reset-password",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "reset-password"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
             }
           }
         },
@@ -217,12 +327,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/auth/logout",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             }
           }
         },
@@ -231,12 +349,20 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/auth/account",
-              "host": ["{{BASE_URL}}"],
-              "path": ["auth", "account"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "account"
+              ]
             }
           }
         }
@@ -267,8 +393,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -276,8 +408,12 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events"
+              ]
             }
           }
         },
@@ -286,16 +422,33 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events?page=1&limit=10",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" },
-                { "key": "status", "value": "DRAFT", "disabled": true }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "DRAFT",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -307,8 +460,13 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}"
+              ]
             }
           }
         },
@@ -317,8 +475,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -326,8 +490,13 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}"
+              ]
             }
           }
         },
@@ -336,12 +505,21 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/publish",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "publish"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "publish"
+              ]
             }
           }
         },
@@ -350,12 +528,21 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/start",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "start"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "start"
+              ]
             }
           }
         },
@@ -364,12 +551,21 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/end",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "end"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "end"
+              ]
             }
           }
         },
@@ -378,12 +574,20 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}"
+              ]
             }
           }
         },
@@ -394,8 +598,14 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/capacity",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "capacity"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "capacity"
+              ]
             }
           }
         },
@@ -404,12 +614,21 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/dashboard",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "dashboard"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "dashboard"
+              ]
             }
           }
         }
@@ -444,8 +663,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -453,8 +678,14 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "guests"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "guests"
+              ]
             }
           }
         },
@@ -463,8 +694,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -472,8 +709,15 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests/bulk-invite",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "guests", "bulk-invite"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "guests",
+                "bulk-invite"
+              ]
             }
           }
         },
@@ -482,16 +726,35 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests?page=1&limit=10",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "guests"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "guests"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" },
-                { "key": "rsvpStatus", "value": "CONFIRMED", "disabled": true }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "rsvpStatus",
+                  "value": "CONFIRMED",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -500,14 +763,21 @@
           "name": "Update Guest RSVP",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests/{{GUEST_ID}}/rsvp",
-              "host": ["{{BASE_URL}}"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
               "path": [
                 "events",
                 "{{EVENT_ID}}",
@@ -542,15 +812,25 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"totp\": \"482917\"\n}"
             },
             "url": {
               "raw": "{{BASE_URL}}/verify-gate/{{INVITATION_TOKEN}}",
-              "host": ["{{BASE_URL}}"],
-              "path": ["verify-gate", "{{INVITATION_TOKEN}}"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "verify-gate",
+                "{{INVITATION_TOKEN}}"
+              ]
             },
             "description": "Replace the totp value with the current 6-digit code generated from the guest's invitation token. The code rotates every 30 seconds."
           }
@@ -580,12 +860,22 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/upload-url",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "media", "upload-url"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media",
+                "upload-url"
+              ]
             },
             "description": "Step 1 of media upload. Use the returned signature, timestamp, apiKey, folder and uploadUrl to POST a file directly to Cloudinary from the frontend. Then call 'Register Uploaded Media' with the resulting URL and publicId."
           }
@@ -611,8 +901,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -620,8 +916,14 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "media"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media"
+              ]
             },
             "description": "Step 2 of media upload. After uploading to Cloudinary directly, register the URL and publicId here. A background job is automatically queued to generate compressed variants and extract metadata."
           }
@@ -631,16 +933,35 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media?page=1&limit=10",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "media"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" },
-                { "key": "mediaType", "value": "IMAGE", "disabled": true }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "mediaType",
+                  "value": "IMAGE",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -650,8 +971,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -659,7 +986,9 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/{{MEDIA_ID}}/voice-note",
-              "host": ["{{BASE_URL}}"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
               "path": [
                 "events",
                 "{{EVENT_ID}}",
@@ -675,8 +1004,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -684,7 +1019,9 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/{{MEDIA_ID}}/comments",
-              "host": ["{{BASE_URL}}"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
               "path": [
                 "events",
                 "{{EVENT_ID}}",
@@ -713,11 +1050,16 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/{{MEDIA_ID}}/likes",
-              "host": ["{{BASE_URL}}"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
               "path": [
                 "events",
                 "{{EVENT_ID}}",
@@ -755,8 +1097,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -764,8 +1112,14 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/memories",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "memories"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "memories"
+              ]
             }
           }
         },
@@ -774,8 +1128,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -783,8 +1143,14 @@
             },
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/memories",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "memories"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "memories"
+              ]
             }
           }
         },
@@ -793,16 +1159,35 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{ACCESS_TOKEN}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
             ],
             "url": {
               "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/memories?page=1&limit=10",
-              "host": ["{{BASE_URL}}"],
-              "path": ["events", "{{EVENT_ID}}", "memories"],
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "memories"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" },
-                { "key": "type", "value": "TEXT", "disabled": true }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "TEXT",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -830,8 +1215,95 @@
             "header": [],
             "url": {
               "raw": "{{BASE_URL}}/health",
-              "host": ["{{BASE_URL}}"],
-              "path": ["health"]
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Integration",
+      "item": [
+        {
+          "name": "Organize Media Moments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaItems\": [\n    \"A photo of the bride and groom at the altar\",\n    \"People dancing energetically under neon lights\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/ai/organize",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "ai",
+                "organize"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get AI Event Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/ai/events/{{EVENT_ID}}/timeline",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "ai",
+                "events",
+                "{{EVENT_ID}}",
+                "timeline"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retag Event Media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/ai/events/{{EVENT_ID}}/retag",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "ai",
+                "events",
+                "{{EVENT_ID}}",
+                "retag"
+              ]
             }
           }
         }
