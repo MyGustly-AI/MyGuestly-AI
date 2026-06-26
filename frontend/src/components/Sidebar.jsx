@@ -2,12 +2,11 @@
 import React from 'react';
 import { useMobileMenu } from '../hooks/useMobileMenu';
 
-export function Sidebar() {
+export function Sidebar() {  // ✅ Named export (no 'default')
   const { isMobile, menuOpen, setMenuOpen } = useMobileMenu();
 
   return (
     <>
-      {/* Mobile Hamburger Button - Only shows on mobile */}
       {isMobile && (
         <button 
           onClick={() => setMenuOpen(!menuOpen)}
@@ -25,13 +24,11 @@ export function Sidebar() {
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(75,0,130,0.3)'
           }}
-          aria-label="Toggle menu"
         >
           {menuOpen ? '✕' : '☰'}
         </button>
       )}
 
-      {/* Sidebar */}
       <aside style={{
         position: 'fixed',
         top: 0,
@@ -59,13 +56,8 @@ export function Sidebar() {
           MyGuestly AI
         </div>
 
-        {/* Navigation */}
         <nav>
-          <ul style={{ 
-            listStyle: 'none', 
-            padding: 0,
-            margin: 0
-          }}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             <NavItem icon="📊" label="Dashboard" href="/host/dashboard" />
             <NavItem icon="📅" label="Events" href="/host/home" />
             <NavItem icon="👥" label="Guests" href="/host/guest-list" />
@@ -75,7 +67,6 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        {/* Bottom section */}
         <div style={{
           position: 'absolute',
           bottom: '24px',
@@ -86,8 +77,8 @@ export function Sidebar() {
         }}>
           <button 
             onClick={() => {
-              // Handle logout
               localStorage.removeItem('token');
+              localStorage.removeItem('user');
               window.location.href = '/login';
             }}
             style={{
@@ -102,15 +93,12 @@ export function Sidebar() {
               fontSize: '14px',
               transition: 'background 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--light-bg)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
             🚪 Logout
           </button>
         </div>
       </aside>
 
-      {/* Overlay for mobile */}
       {isMobile && menuOpen && (
         <div 
           onClick={() => setMenuOpen(false)}
@@ -122,17 +110,9 @@ export function Sidebar() {
             bottom: 0,
             background: 'rgba(0,0,0,0.4)',
             zIndex: 998,
-            animation: 'fadeIn 0.3s ease'
           }}
         />
       )}
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
     </>
   );
 }
@@ -155,14 +135,6 @@ function NavItem({ icon, label, href }) {
           fontWeight: '500',
           transition: 'all 0.2s',
           cursor: 'pointer'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--light-bg)';
-          e.currentTarget.style.color = 'var(--primary)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--text-muted)';
         }}
       >
         <span style={{ fontSize: '18px' }}>{icon}</span>
