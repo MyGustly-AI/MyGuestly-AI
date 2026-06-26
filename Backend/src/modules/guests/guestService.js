@@ -36,7 +36,7 @@ export class GuestService extends BaseService {
             } else {
               // another guest already has this email for the event; skip updating email
               // keep existing email and log for debugging
-              // eslint-disable-next-line no-console
+               
               console.warn(
                 `Skipping email update for guest ${existing.id}: email already used by ${conflict.id}`,
               );
@@ -51,7 +51,7 @@ export class GuestService extends BaseService {
               updates.phone = guestData.phone;
             } else {
               // another guest already has this phone for the event; skip updating phone
-              // eslint-disable-next-line no-console
+               
               console.warn(
                 `Skipping phone update for guest ${existing.id}: phone already used by ${conflictPhone.id}`,
               );

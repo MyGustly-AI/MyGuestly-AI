@@ -1,4 +1,4 @@
-import 'dotenv/config'; // Must be the very first line
+import "dotenv/config"; // Must be the very first line
 import express from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";

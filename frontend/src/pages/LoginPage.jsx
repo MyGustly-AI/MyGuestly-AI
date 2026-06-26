@@ -16,14 +16,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+    
     try {
       const user = await login({ email, password });
-      if (user?.role === 'GUEST') {
+      
+      // Navigate based on user role
+      if (user?.role === 'GUEST' || user?.role === 'guest') {
         navigate('/guest/dashboard');
+      } else if (user?.role === 'HOST' || user?.role === 'host') {
+        navigate('/host/dashboard');
       } else {
+        // Default fallback
         navigate('/host/dashboard');
       }
     } catch (err) {
+      // Error is already set in the auth context
       setSubmitting(false);
     }
   };
@@ -36,12 +43,26 @@ export default function LoginPage() {
         <p className="auth-sub">Join the celebration of intelligence and hospitality.</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          {error && <div className="auth-error">{error}</div>}
+          {error && (
+            <div className="auth-error" style={{
+              background: '#fee2e2',
+              color: '#dc2626',
+              padding: '12px',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
 
           <div className="form-group">
             <label className="label">Email Address</label>
             <div className="input-icon-wrap">
-              <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
               <input
                 className="input-field input-with-icon"
                 type="email"
@@ -49,13 +70,18 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
+                disabled={submitting}
               />
             </div>
           </div>
+          
           <div className="form-group">
             <label className="label">Password</label>
             <div className="input-icon-wrap">
-              <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
               <input
                 className="input-field input-with-icon"
                 type="password"
@@ -63,27 +89,42 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
+                disabled={submitting}
               />
             </div>
           </div>
+          
           <div className="auth-row">
             <label className="checkbox-label">
-              <input type="checkbox" /> Stay signed in
+              <input type="checkbox" disabled={submitting} /> Stay signed in
             </label>
             <Link to="/forgot-password" className="auth-link">Forgot Password?</Link>
           </div>
-          <button type="submit" className="btn-primary auth-submit" disabled={submitting}>
+          
+          <button 
+            type="submit" 
+            className="btn-primary auth-submit" 
+            disabled={submitting}
+            style={{ width: '100%', justifyContent: 'center' }}
+          >
             {submitting ? 'Signing In...' : 'Sign In'}
           </button>
+          
           <div className="auth-divider"><span>OR CONTINUE WITH</span></div>
+          
           <div className="auth-socials">
             <GoogleAuthButton />
-            <button type="button" className="social-btn" disabled>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <button type="button" className="social-btn" disabled={submitting}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
               Apple
             </button>
           </div>
-          <p className="auth-bottom-text">New to MyGuestly AI? <Link to="/signup" className="auth-link">Create account</Link></p>
+          
+          <p className="auth-bottom-text">
+            New to MyGuestly AI? <Link to="/signup" className="auth-link">Create account</Link>
+          </p>
         </form>
       </div>
 
@@ -98,4 +139,4 @@ export default function LoginPage() {
       </footer>
     </div>
   );
-}
+  }
