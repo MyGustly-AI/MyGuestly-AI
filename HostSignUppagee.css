@@ -1,0 +1,433 @@
+/* ─── Base layout ─────────────────────────────────── */
+.auth-page {
+  min-height: 100vh;
+  background: var(--off-white);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Split layout */
+.auth-split {
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+/* ─── Left panel ──────────────────────────────────── */
+.auth-split-left {
+  flex: 0 0 45%;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-split-left img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.auth-split-left-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+      rgba(20, 0, 60, 0.88) 35%,
+      rgba(20, 0, 60, 0.35) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 44px 40px;
+  color: #fff;
+}
+
+.auth-split-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 18px;
+  width: fit-content;
+}
+
+.auth-split-headline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+
+.auth-split-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+  max-width: 320px;
+  margin-bottom: 28px;
+}
+
+/* Social proof card (bottom of left panel) */
+.auth-split-proof-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  padding: 16px 20px;
+  width: fit-content;
+}
+
+.proof-card-left {
+  display: flex;
+  align-items: center;
+}
+
+.proof-icon-wrap {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.proof-icon-label {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.3px;
+}
+
+.proof-card-right {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.proof-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.proof-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ─── Right panel ─────────────────────────────────── */
+.auth-split-right {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 52px 48px;
+  overflow-y: auto;
+  background: #fff;
+}
+
+.auth-split-right .auth-box {
+  max-width: 460px;
+  width: 100%;
+}
+
+/* ─── Auth box common ─────────────────────────────── */
+.auth-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+}
+
+.auth-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Google button ───────────────────────────────── */
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.google-btn:hover {
+  border-color: var(--primary);
+  background: var(--light-bg);
+}
+
+/* ─── Divider ─────────────────────────────────────── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-light);
+  letter-spacing: 0.6px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── Form elements ───────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.input-field {
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-dark);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.18s;
+}
+
+.input-field::placeholder {
+  color: var(--text-light);
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+}
+
+/* ─── Host type grid ──────────────────────────────── */
+.host-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.host-type-btn {
+  padding: 12px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.host-type-btn:hover,
+.host-type-btn.active {
+  border-color: var(--primary);
+  background: var(--light-bg);
+  color: var(--primary);
+}
+
+/* ─── Agree row ───────────────────────────────────── */
+.agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.agree-row input[type='checkbox'] {
+  margin-top: 2px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.agree-row a {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* ─── CTA button ──────────────────────────────────── */
+.btn-primary.auth-submit {
+  width: 100%;
+  padding: 15px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  justify-content: center;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+
+.btn-primary.auth-submit:hover {
+  opacity: 0.9;
+}
+
+/* ─── Bottom social proof ─────────────────────────── */
+.auth-social-proof {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.proof-quote {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.proof-avatars-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proof-avatars {
+  display: flex;
+}
+
+.proof-avatars img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  margin-left: -8px;
+  object-fit: cover;
+}
+
+.proof-avatars img:first-child {
+  margin-left: 0;
+}
+
+.proof-count-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--light-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 9px;
+}
+
+/* ─── Sign in link ────────────────────────────────── */
+.auth-bottom-text {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth-link {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* ─── Centered layout (Login page) ───────────────── */
+.auth-centered {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.auth-centered .auth-box {
+  max-width: 420px;
+  width: 100%;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+  box-shadow: 0 4px 32px rgba(75, 0, 130, 0.07);
+}
+
+/* ─── Auth header for split pages ────────────────── */
+.auth-split-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* ─── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .auth-split {
+    flex-direction: column;
+  }
+
+  .auth-split-left {
+    flex: 0 0 260px;
+    min-height: 260px;
+  }
+
+  .auth-split-right {
+    padding: 32px 24px;
+  }
+
+  .host-type-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

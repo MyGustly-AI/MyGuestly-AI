@@ -1,4 +1,3 @@
-// src/hooks/useMobileMenu.js
 import { useState, useEffect } from 'react';
 
 export function useMobileMenu() {
@@ -6,6 +5,7 @@ export function useMobileMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    // Check if window is available (for SSR)
     if (typeof window !== 'undefined') {
       const checkMobile = () => {
         setIsMobile(window.innerWidth <= 768);
@@ -18,6 +18,7 @@ export function useMobileMenu() {
     }
   }, []);
 
+  // Close menu when resizing to desktop
   useEffect(() => {
     if (!isMobile) {
       setMenuOpen(false);
