@@ -1,5 +1,5 @@
 import { BaseController } from "../../shared/base/BaseController.js";
-import { prisma } from "../../shared/utils/prisma.js"
+import { prisma } from "../../shared/utils/prisma.js";
 import { QRUtil } from "../../shared/utils/helpers.js";
 import { AppError } from "../../shared/utils/AppError.js";
 import { logger } from "../../infra/loggers/logger.js";
