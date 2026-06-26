@@ -89,3 +89,63 @@
 .inv-contact { font-size: 12px; color: var(--text-muted); }
 
 .inv-step-nav { display: flex; justify-content: space-between; align-items: center; }
+
+/* ===== RESPONSIVE MEDIA QUERIES ===== */
+
+@media (max-width: 768px) {
+  .invitation-outer {
+    padding: 72px 16px 24px; /* Give room for mobile menu button */
+  }
+  
+  .stepper {
+    padding: 16px;
+    overflow-x: auto;
+    gap: 16px;
+  }
+  
+  .step-line {
+    display: none; /* Hide lines on mobile to preserve layout flow */
+  }
+  
+  .invitation-cols {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .inv-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .inv-list-header button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .inv-table-head {
+    font-size: 10px;
+    padding: 8px 4px;
+  }
+  
+  .inv-table-row {
+    padding: 10px 4px;
+    font-size: 11px;
+  }
+  
+  .inv-contact {
+    font-size: 11px;
+    word-break: break-all;
+  }
+  
+  .inv-step-nav {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .inv-step-nav button {
+    width: 100%;
+    justify-content: center;
+  }
+}
