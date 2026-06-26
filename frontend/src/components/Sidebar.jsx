@@ -2,11 +2,12 @@
 import React from 'react';
 import { useMobileMenu } from '../hooks/useMobileMenu';
 
-export function Sidebar() {  // ✅ Named export (no 'default')
+export function Sidebar() {
   const { isMobile, menuOpen, setMenuOpen } = useMobileMenu();
 
   return (
     <>
+      {/* Mobile Hamburger Button */}
       {isMobile && (
         <button 
           onClick={() => setMenuOpen(!menuOpen)}
@@ -14,37 +15,41 @@ export function Sidebar() {  // ✅ Named export (no 'default')
             position: 'fixed',
             top: '16px',
             left: '16px',
-            zIndex: 1000,
+            zIndex: 1001,  // Higher than everything
             background: 'var(--primary)',
             color: 'white',
-            padding: '12px 16px',
+            padding: '12px 14px',
             borderRadius: '8px',
             fontSize: '20px',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(75,0,130,0.3)'
+            boxShadow: '0 4px 12px rgba(75,0,130,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
+          aria-label="Toggle menu"
         >
           {menuOpen ? '✕' : '☰'}
         </button>
       )}
 
+      {/* Sidebar */}
       <aside style={{
         position: 'fixed',
         top: 0,
         left: 0,
-        width: '240px',
+        width: '260px',
         height: '100vh',
         background: 'white',
         borderRight: '1px solid var(--border)',
         padding: '24px 16px',
         transform: isMobile ? (menuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 999,
+        zIndex: 1000,
         overflowY: 'auto',
-        boxShadow: isMobile && menuOpen ? '4px 0 24px rgba(0,0,0,0.1)' : 'none'
+        boxShadow: isMobile && menuOpen ? '4px 0 24px rgba(0,0,0,0.15)' : 'none'
       }}>
-        {/* Logo/Brand */}
         <div style={{
           padding: '8px 12px',
           marginBottom: '32px',
@@ -93,12 +98,15 @@ export function Sidebar() {  // ✅ Named export (no 'default')
               fontSize: '14px',
               transition: 'background 0.2s'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--light-bg)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
             🚪 Logout
           </button>
         </div>
       </aside>
 
+      {/* Overlay for mobile */}
       {isMobile && menuOpen && (
         <div 
           onClick={() => setMenuOpen(false)}
@@ -108,8 +116,8 @@ export function Sidebar() {  // ✅ Named export (no 'default')
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.4)',
-            zIndex: 998,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 999,
           }}
         />
       )}
@@ -117,10 +125,9 @@ export function Sidebar() {  // ✅ Named export (no 'default')
   );
 }
 
-// Navigation Item Component
 function NavItem({ icon, label, href }) {
   return (
-    <li style={{ marginBottom: '4px' }}>
+    <li style={{ marginBottom: '2px' }}>
       <a 
         href={href}
         style={{
@@ -136,12 +143,18 @@ function NavItem({ icon, label, href }) {
           transition: 'all 0.2s',
           cursor: 'pointer'
         }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'var(--light-bg)';
+          e.currentTarget.style.color = 'var(--primary)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = 'var(--text-muted)';
+        }}
       >
-        <span style={{ fontSize: '18px' }}>{icon}</span>
+        <span style={{ fontSize: '18px', width: '24px' }}>{icon}</span>
         {label}
       </a>
     </li>
   );
-}
-
-export default Sidebar;
+            }
