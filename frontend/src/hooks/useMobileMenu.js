@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react';
 
 export function useMobileMenu() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      if (!mobile) setMenuOpen(false);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // Check if window is available (for SSR)
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth <= 768);
+      };
+      
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      
+      return () => window.removeEventListener('resize', checkMobile);
+    }
   }, []);
 
+  // Close menu when resizing to desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setMenuOpen(false);
+    }
+  }, [isMobile]);
+
   return { isMobile, menuOpen, setMenuOpen };
-                                            }
+}
