@@ -1,10 +1,15 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || "https://myguestly-ai.onrender.com/api/v1";
 
-let accessToken = null;
+let accessToken = localStorage.getItem("token") || null;
 let onUnauthorized = null;
 
 export function setAccessToken(token) {
   accessToken = token;
+  if (token) {
+    localStorage.setItem("token", token);
+  } else {
+    localStorage.removeItem("token");
+  }
 }
 
 export function getAccessToken() {
