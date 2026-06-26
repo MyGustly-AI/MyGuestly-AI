@@ -70,3 +70,123 @@
   display: flex; align-items: center; justify-content: space-between;
   gap: 20px; margin-top: 20px; flex-wrap: wrap;
 }
+
+/* Modal Dialog Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 440px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* ===== RESPONSIVE MEDIA QUERIES ===== */
+
+@media (max-width: 900px) {
+  .summary-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .guestlist-outer {
+    padding: 72px 16px 24px; /* Give room for mobile menu button */
+  }
+  
+  .guestlist-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .guestlist-top-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .guestlist-top-actions select {
+    width: 100% !important;
+  }
+  
+  .guestlist-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .guestlist-controls select {
+    width: 100% !important;
+  }
+  
+  .delegate-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .delegate-banner button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .card {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .summary-card {
+    padding: 16px;
+  }
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './ProfilePage.css';
 
 // ------------------------------------------------------------------
@@ -15,6 +16,7 @@ const highlights = [
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="profile-page">
@@ -47,10 +49,10 @@ export default function ProfilePage() {
             <img src="/cover-bg.jpg" alt="Cover" className="profile-cover-img" />
           </div>
           <div className="profile-cover-bottom">
-            <img src="/profile.png" alt="Amara Okeke" className="profile-main-avatar" />
+            <img src="/profile.png" alt={user?.fullName || 'Amara Okeke'} className="profile-main-avatar" />
             <div className="profile-cover-info">
               <h1 className="profile-name-lg">
-                Amara Okeke
+                {user?.fullName || 'Amara Okeke'}
                 <span className="profile-premium-badge">
                   <ShieldSmIcon /> PREMIUM HOST
                 </span>
@@ -131,7 +133,7 @@ export default function ProfilePage() {
                   <PhoneIcon />
                   <div>
                     <div className="profile-contact-type">PHONE</div>
-                    <div className="profile-contact-val">+234 803 000 1234</div>
+                    <div className="profile-contact-val">{user?.phone || '+234 803 000 1234'}</div>
                   </div>
                 </div>
                 <div className="profile-contact-item">
@@ -144,8 +146,8 @@ export default function ProfilePage() {
                 <div className="profile-contact-item">
                   <GlobeIcon />
                   <div>
-                    <div className="profile-contact-type">WEBSITE</div>
-                    <div className="profile-contact-val profile-website">amaraokeke.events</div>
+                    <div className="profile-contact-type">EMAIL</div>
+                    <div className="profile-contact-val profile-website">{user?.email || 'amaraokeke@guestly.ai'}</div>
                   </div>
                 </div>
               </div>

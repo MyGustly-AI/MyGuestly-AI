@@ -1,24 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import AppHeader from '../components/AppHeader';
+import { listEventsRequest } from '../api/events';
+import { listGuestsRequest, addGuestRequest, deleteGuestRequest } from '../api/guests';
 import './GuestListPage.css';
 
-const guests = [
-  { name: 'Julienee Deauville', email: 'j.deauville@outlook.net', rsvp: 'ATTENDING', post: 'Shared', avatar: 'JD', role: 'FULL ADMIN', event: 'All active events', digital: 'Billing, staffing' },
-  { name: 'Marcus Titaoue', email: 'marcus@event.com', rsvp: 'ATTENDING', post: 'Shared', avatar: 'MT', role: 'CHECK-IN LEAD', event: 'Summer Gala, Tech Summit', digital: 'QR Scanning' },
-  { name: 'Sophie Chen', email: 's.chen@events.io', rsvp: 'PENDING', post: null, avatar: 'SC', role: null, event: 'Grand Opening', digital: 'Media Approval' },
-  { name: 'Marcus Rodriguez', email: 'm.rodriguez@mail.com', rsvp: 'DECLINED', post: 'Not Sent', avatar: 'MR', role: null, event: 'Wedding, Birthday', digital: 'Photography' },
-];
-
-const summaryCards = [
-  { label: 'Total Events', value: '520', color: 'var(--primary)' },
-  { label: 'Attending', value: '384', color: 'var(--success)' },
-  { label: 'Pending', value: '92', color: 'var(--warning)' },
-  { label: 'Declined', value: '44', color: 'var(--danger)' },
-];
-
 export default function GuestListPage() {
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [guests, setGuests] = useState([]);
+  
+  // Loading states
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [guestsLoading, setGuestsLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Filter & Search states
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Modal form states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [addError, setAddError] = useState(null);
+
+  // Fetch all events on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await listEventsRequest();
+        const eventList = data?.data || data || [];
+        setEvents(eventList);
+        if (eventList.length > 0) {
+          setSelectedEventId(eventList[0].id);
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to retrieve events.');
+      } finally {
+        setEventsLoading(false);
+      }
+    })();
+  }, []);
+
+  // Fetch guests whenever selectedEventId or statusFilter changes
+  useEffect(() => {
+    if (!selectedEventId) return;
+
+    (async () => {
+      setGuestsLoading(true);
+      setError(null);
+      try {
+        const query = {};
+        if (statusFilter !== 'ALL') {
+          query.status = statusFilter; // matches backend status expectation
+        }
+        const data = await listGuestsRequest(selectedEventId, query);
+        setGuests(data?.data || data || []);
+      } catch (err) {
+        setError(err.message || 'Failed to retrieve guest list.');
+      } finally {
+        setGuestsLoading(false);
+      }
+    })();
+  }, [selectedEventId, statusFilter]);
+
+  // Handle Add Guest Submission
+  const handleAddGuest = async (e) => {
+    e.preventDefault();
+    if (!fullName.trim()) {
+      setAddError('Full Name is required.');
+      return;
+    }
+    if (!email.trim() && !phone.trim()) {
+      setAddError('Please provide either an Email or Phone number.');
+      return;
+    }
+
+    setAddError(null);
+    setActionLoading(true);
+    try {
+      const payload = { fullName };
+      if (email.trim()) payload.email = email.trim();
+      if (phone.trim()) payload.phone = phone.trim();
+
+      const newGuestResponse = await addGuestRequest(selectedEventId, payload);
+      const addedGuest = newGuestResponse?.guest || newGuestResponse;
+
+      // Optimistically prepend the guest
+      setGuests((prev) => [addedGuest, ...prev]);
+
+      // Reset form & close modal
+      setFullName('');
+      setEmail('');
+      setPhone('');
+      setShowAddModal(false);
+    } catch (err) {
+      setAddError(err.message || 'Failed to add guest.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle Delete Guest
+  const handleDeleteGuest = async (guestId) => {
+    if (!window.confirm('Are you sure you want to remove this guest?')) return;
+    
+    setActionLoading(true);
+    try {
+      await deleteGuestRequest(selectedEventId, guestId);
+      setGuests((prev) => prev.filter((g) => g.id !== guestId));
+    } catch (err) {
+      alert(err.message || 'Failed to delete guest.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Count summaries dynamically based on the current guests list
+  const getCounts = () => {
+    const total = guests.length;
+    const attending = guests.filter((g) => g.invitation?.status === 'ACCEPTED').length;
+    const pending = guests.filter((g) => !g.invitation || g.invitation.status === 'PENDING').length;
+    const declined = guests.filter((g) => g.invitation?.status === 'DECLINED').length;
+
+    return { total, attending, pending, declined };
+  };
+
+  const counts = getCounts();
+
+  const selectedEvent = events.find((e) => e.id === selectedEventId);
+
+  // Filter guests locally by search string
+  const filteredGuests = guests.filter((g) => {
+    const matchesSearch =
+      !search ||
+      g.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      (g.email && g.email.toLowerCase().includes(search.toLowerCase())) ||
+      (g.phone && g.phone.includes(search));
+    return matchesSearch;
+  });
 
   return (
     <div className="app-layout">
@@ -38,58 +161,103 @@ export default function GuestListPage() {
             <div>
               <h1 className="page-heading">Guest List Management</h1>
               <p className="page-sub" style={{ marginTop: 4 }}>
-                <span className="badge badge-purple" style={{ fontSize: 11, marginRight: 6 }}>Premium Host</span>
-                Premium Attendees • 620 Guests Confirmed
+                {selectedEvent ? (
+                  <>
+                    <span className="badge badge-purple" style={{ fontSize: 11, marginRight: 6 }}>
+                      {selectedEvent.eventCategory || 'Event'}
+                    </span>
+                    {selectedEvent.title} • {counts.total} Guests Listed
+                  </>
+                ) : (
+                  'Select an event to manage attendees.'
+                )}
               </p>
             </div>
             <div className="guestlist-top-actions">
-              <button className="btn-ghost" style={{ fontSize: 12, padding: '9px 16px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                Message All
-              </button>
-              <button className="btn-ghost" style={{ fontSize: 12, padding: '9px 16px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export List
-              </button>
-              <button className="btn-primary" style={{ fontSize: 12, padding: '9px 16px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+              {events.length > 1 && (
+                <select
+                  className="input-field"
+                  style={{ width: 200, fontSize: 12, height: 38 }}
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                >
+                  {events.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.title}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <button
+                className="btn-primary"
+                style={{ fontSize: 12, padding: '9px 16px' }}
+                onClick={() => setShowAddModal(true)}
+                disabled={!selectedEventId}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v8M8 12h8" />
+                </svg>
                 Add Guest
               </button>
             </div>
           </div>
 
+          {error && <div className="auth-error" style={{ marginBottom: 16 }}>{error}</div>}
+
           {/* Summary Cards */}
           <div className="summary-row">
-            {summaryCards.map((c, i) => (
-              <div key={i} className="summary-card">
-                <div className="summary-value" style={{ color: c.color }}>{c.value}</div>
-                <div className="summary-label">{c.label}</div>
+            <div className="summary-card">
+              <div className="summary-value" style={{ color: 'var(--primary)' }}>
+                {eventsLoading || guestsLoading ? '...' : counts.total}
               </div>
-            ))}
+              <div className="summary-label">Total Guests</div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-value" style={{ color: 'var(--success)' }}>
+                {eventsLoading || guestsLoading ? '...' : counts.attending}
+              </div>
+              <div className="summary-label">Attending</div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-value" style={{ color: 'var(--warning)' }}>
+                {eventsLoading || guestsLoading ? '...' : counts.pending}
+              </div>
+              <div className="summary-label">Pending</div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-value" style={{ color: 'var(--danger)' }}>
+                {eventsLoading || guestsLoading ? '...' : counts.declined}
+              </div>
+              <div className="summary-label">Declined</div>
+            </div>
           </div>
 
           {/* Search + Filter */}
           <div className="guestlist-controls">
             <div className="input-icon-wrap" style={{ flex: 1, maxWidth: 360 }}>
-              <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
               <input
                 className="input-field input-with-icon"
-                placeholder="Search by name, email or status..."
+                placeholder="Search by name, email or phone..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 style={{ background: 'var(--white)' }}
               />
             </div>
-            <select className="input-field" style={{ width: 160 }}>
-              <option>All RSVP Status</option>
-              <option>Attending</option>
-              <option>Pending</option>
-              <option>Declined</option>
-            </select>
-            <select className="input-field" style={{ width: 140 }}>
-              <option>Filter Party</option>
-              <option>VIP</option>
-              <option>General</option>
+            <select
+              className="input-field"
+              style={{ width: 180 }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All RSVP Status</option>
+              <option value="CONFIRMED">Attending</option>
+              <option value="PENDING">Pending</option>
+              <option value="DECLINED">Declined</option>
             </select>
           </div>
 
@@ -98,87 +266,175 @@ export default function GuestListPage() {
             <table className="guest-table">
               <thead>
                 <tr>
-                  <th><input type="checkbox" /></th>
+                  <th style={{ width: '40px' }}>
+                    <input type="checkbox" />
+                  </th>
                   <th>Guest Name</th>
                   <th>Contact Info</th>
                   <th>RSVP Status</th>
-                  <th>Digital Post</th>
-                  <th>Action</th>
+                  <th>Invitation Link</th>
+                  <th style={{ width: '100px' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {guests.filter(g => !search || g.name.toLowerCase().includes(search.toLowerCase())).map((g, i) => (
-                  <tr key={i}>
-                    <td><input type="checkbox" /></td>
-                    <td>
-                      <div className="guest-cell">
-                        <div className="guest-avatar-sm">{g.avatar}</div>
-                        <div>
-                          <div className="guest-name">{g.name}</div>
-                          <div className="guest-email">{g.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="guest-email">{g.email}</td>
-                    <td>
-                      <span className={`badge ${g.rsvp === 'ATTENDING' ? 'badge-success' : g.rsvp === 'PENDING' ? 'badge-warning' : 'badge-declined'}`}>
-                        {g.rsvp}
-                      </span>
-                    </td>
-                    <td>
-                      {g.post
-                        ? <span className={`badge ${g.post === 'Shared' ? 'badge-purple' : ''}`}>{g.post}</span>
-                        : <span className="badge" style={{ background: '#f1f5f9', color: '#94a3b8' }}>Not Sent</span>
-                      }
-                    </td>
-                    <td>
-                      <div className="guest-actions">
-                        <button className="table-action-btn" title="Edit">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button className="table-action-btn" title="Remove">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="m19,6-.867,13.142A2,2,0,0,1,16.138,21H7.862a2,2,0,0,1-1.995-1.858L5,6m5,0V4a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1v2"/></svg>
-                        </button>
-                      </div>
+                {guestsLoading ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                      Loading guest list...
                     </td>
                   </tr>
-                ))}
+                ) : filteredGuests.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                      {search || statusFilter !== 'ALL' ? 'No guests match filters.' : 'No guests invited yet.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredGuests.map((g) => {
+                    const status = g.invitation?.status || 'PENDING';
+                    const init = g.fullName ? g.fullName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : 'G';
+                    return (
+                      <tr key={g.id}>
+                        <td>
+                          <input type="checkbox" />
+                        </td>
+                        <td>
+                          <div className="guest-cell">
+                            <div className="guest-avatar-sm">{init}</div>
+                            <div>
+                              <div className="guest-name">{g.fullName}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="guest-email">{g.email || g.phone || '—'}</td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              status === 'ACCEPTED' || status === 'CHECKED_IN'
+                                ? 'badge-success'
+                                : status === 'PENDING'
+                                ? 'badge-warning'
+                                : 'badge-declined'
+                            }`}
+                          >
+                            {status === 'ACCEPTED' ? 'ATTENDING' : status}
+                          </span>
+                        </td>
+                        <td>
+                          {g.invitation?.token ? (
+                            <a
+                              href={`/rsvp/${selectedEvent?.eventCode}/${g.invitation.token}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+                            >
+                              RSVP Link
+                            </a>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)' }}>None</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="guest-actions">
+                            <button
+                              className="table-action-btn"
+                              title="Remove"
+                              onClick={() => handleDeleteGuest(g.id)}
+                              disabled={actionLoading}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3,6 5,6 21,6" />
+                                <path d="m19,6-.867,13.142A2,2,0,0,1,16.138,21H7.862a2,2,0,0,1-1.995-1.858L5,6m5,0V4a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1v2" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
             <div className="table-footer">
-              <span>Showing 4 of 100 guests</span>
-              <div className="pagination">
-                <button className="page-btn active">1</button>
-                <button className="page-btn">2</button>
-                <button className="page-btn">3</button>
-                <span>...</span>
-                <button className="page-btn">42</button>
-                <button className="page-btn">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-              </div>
+              <span>
+                Showing {filteredGuests.length} of {guests.length} guests
+              </span>
             </div>
           </div>
 
-          {/* Delegate Permissions */}
-          <div className="delegate-banner card">
-            <div>
-              <h3 className="inv-section-title">Delegate Event Permissions</h3>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                Streamline your hosting experience. Promote trusted guests to Admin status to help manage check-ins, oversee the photo gallery, and moderate guest interactions during the event.
-              </p>
-            </div>
-            <button className="btn-primary" style={{ whiteSpace: 'nowrap' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              Manage Admin Roles
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button className="btn-primary" style={{ justifyContent: 'center' }} onClick={() => window.history.back()}>
+              Back to Dashboard
             </button>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: 8 }}>
-            <button className="btn-primary" style={{ justifyContent: 'center' }} onClick={() => window.history.back()}>Create New Event</button>
           </div>
         </div>
       </main>
+
+      {/* Add Guest Modal */}
+      {showAddModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 className="modal-title">Invite New Guest</h3>
+              <button className="modal-close-btn" onClick={() => setShowAddModal(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleAddGuest}>
+              <div className="form-group">
+                <label className="label">Full Name *</label>
+                <input
+                  className="input-field"
+                  type="text"
+                  placeholder="e.g. Adequate S. Johnson"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: 12 }}>
+                <label className="label">Email Address</label>
+                <input
+                  className="input-field"
+                  type="email"
+                  placeholder="email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: 12 }}>
+                <label className="label">Phone Number (E.164 format)</label>
+                <input
+                  className="input-field"
+                  type="tel"
+                  placeholder="e.g. +2348032454760"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+
+              {addError && <div className="auth-error" style={{ marginTop: 12 }}>{addError}</div>}
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowAddModal(false)}
+                  disabled={actionLoading}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={actionLoading}>
+                  {actionLoading ? 'Inviting...' : 'Add Guest'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

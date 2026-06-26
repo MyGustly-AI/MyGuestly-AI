@@ -32,14 +32,14 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-      const { token, user } = response.data;
+      const { accessToken, user } = response.data.data;
       
       // Store in localStorage
-      localStorage.setItem('token', token);
+      localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
       
       // Set auth header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
       
       setIsAuthenticated(true);
       setUser(user);
@@ -64,12 +64,12 @@ export function AuthProvider({ children }) {
   const signup = async (userData) => {
     setError(null);
     try {
-      const response = await axios.post(`${API_URL}/auth/signup`, userData);
-      const { token, user } = response.data;
+      const response = await axios.post(`${API_URL}/auth/register`, userData);
+      const { accessToken, user } = response.data.data;
       
-      localStorage.setItem('token', token);
+      localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
       
       setIsAuthenticated(true);
       setUser(user);
@@ -83,6 +83,34 @@ export function AuthProvider({ children }) {
         setError(err.response.data.message);
       } else {
         setError('An unexpected error occurred. Please try again.');
+      }
+      throw err;
+    }
+  };
+
+  // Google login function
+  const googleLogin = async (idToken) => {
+    setError(null);
+    try {
+      const response = await axios.post(`${API_URL}/auth/google`, { idToken });
+      const { accessToken, user } = response.data.data;
+      
+      localStorage.setItem('token', accessToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      
+      setIsAuthenticated(true);
+      setUser(user);
+      return user;
+    } catch (err) {
+      console.error('Google login error:', err);
+      
+      if (err.response?.status === 503) {
+        setError('The server is currently unavailable. Please try again later.');
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('An unexpected error occurred during Google sign-in. Please try again.');
       }
       throw err;
     }
@@ -146,6 +174,8 @@ export function AuthProvider({ children }) {
     setError,
     login,
     signup,
+    register: signup,
+    googleLogin,
     logout,
     forgotPassword,
     resetPassword

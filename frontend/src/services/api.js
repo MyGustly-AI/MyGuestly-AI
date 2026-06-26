@@ -48,7 +48,7 @@ api.interceptors.response.use(
 // API Service Methods
 export const authService = {
   login: (email, password) => api.post('/auth/login', { email, password }),
-  signup: (userData) => api.post('/auth/signup', userData),
+  signup: (userData) => api.post('/auth/register', userData),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
 };
