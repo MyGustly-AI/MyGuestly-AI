@@ -170,4 +170,6 @@ function NavItem({ icon, label, href }) {
       </a>
     </li>
   );
-            }
+}
+
+export default Sidebar;
