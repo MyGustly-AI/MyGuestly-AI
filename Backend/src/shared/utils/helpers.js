@@ -50,7 +50,7 @@ export class JwtUtil {
       if (!secret) throw new Error("Missing JWT_SECRET environment variable");
       return jwt.verify(token, secret);
     } catch (error) {
-      throw new Error("Invalid or expired token");
+      throw new Error("Invalid or expired token", { cause: error });
     }
   }
 
@@ -64,7 +64,7 @@ export class JwtUtil {
         throw new Error("Missing JWT_REFRESH_SECRET environment variable");
       return jwt.verify(token, secret);
     } catch (error) {
-      throw new Error("Invalid or expired refresh token");
+      throw new Error("Invalid or expired refresh token", { cause: error });
     }
   }
 
