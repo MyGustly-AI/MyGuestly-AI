@@ -63,5 +63,13 @@ export const resetPasswordSchema = z.object({
 
 // Safe validation schema for Google OAuth login
 export const googleAuthSchema = z.object({
-    idToken: z.string().min(1),
-});
+    idToken: z.string().min(1).optional(),
+    credential: z.string().min(1).optional(),
+    token: z.string().min(1).optional(),
+}).refine(data => data.idToken || data.credential || data.token, {
+    message: "Google token must be provided",
+    path: ["idToken"]
+}).transform(data => ({
+    ...data,
+    idToken: data.idToken || data.credential || data.token
+}));
