@@ -174,6 +174,7 @@ export function AuthProvider({ children }) {
     setError,
     login,
     signup,
+    register: signup,
     googleLogin,
     logout,
     forgotPassword,
