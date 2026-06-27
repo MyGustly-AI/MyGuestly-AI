@@ -4,7 +4,6 @@
   padding: 20px 0;
 }
 
-/* Welcome Section */
 .welcome-section {
   display: flex;
   justify-content: space-between;
@@ -50,7 +49,6 @@
   background: rgba(255,255,255,0.1);
 }
 
-/* Stats */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -84,10 +82,6 @@
   border-radius: 12px;
 }
 
-.stat-content {
-  display: flex;
-  flex-direction: column;
-}
 .stat-value {
   font-size: 24px;
   font-weight: 700;
@@ -98,7 +92,6 @@
   color: var(--text-muted);
 }
 
-/* Events Section */
 .events-section {
   margin-bottom: 32px;
 }
@@ -152,7 +145,6 @@
   margin-bottom: 12px;
 }
 
-/* RSVP */
 .rsvp-section {
   margin: 12px 0;
 }
@@ -181,119 +173,6 @@
   gap: 8px;
 }
 
-/* Voice Notes Section (Dashboard) */
-.voicenotes-section-dashboard {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 16px;
-}
-
-.voicenotes-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.voicenotes-header h2 {
-  font-size: 18px;
-  margin: 0;
-}
-
-.live-badge {
-  background: #dc2626;
-  color: white;
-  padding: 2px 12px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.voicenotes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.voicenote-item {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 10px 12px;
-  background: var(--light-bg);
-  border-radius: 8px;
-}
-.voicenote-info {
-  flex: 1;
-  min-width: 140px;
-}
-.voicenote-title {
-  font-weight: 600;
-  font-size: 14px;
-  display: block;
-}
-.voicenote-author {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.voicenote-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 2;
-  flex-wrap: wrap;
-}
-.play-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.play-btn:hover {
-  background: var(--primary-light);
-}
-.voicenote-duration {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.voicenote-waveform {
-  flex: 1;
-  min-width: 80px;
-}
-.waveform-bars {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 24px;
-}
-.waveform-bar {
-  flex: 1;
-  background: var(--border);
-  border-radius: 2px;
-  min-height: 4px;
-  transition: background 0.3s;
-}
-.waveform-bar.active {
-  background: var(--primary-light);
-}
-
-/* Empty / Loading */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -307,7 +186,6 @@
 
 .loading-state { text-align: center; padding: 40px; color: var(--text-muted); }
 
-/* Responsive */
 @media (max-width: 768px) {
   .welcome-section {
     flex-direction: column;
@@ -331,13 +209,6 @@
   }
   .stat-value { font-size: 20px; }
   .events-grid { grid-template-columns: 1fr; }
-  .voicenote-item {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .voicenote-controls {
-    flex-wrap: wrap;
-  }
 }
 
 @media (max-width: 480px) {
@@ -346,5 +217,4 @@
   .stat-icon { font-size: 20px; width: 40px; height: 40px; }
   .stat-value { font-size: 18px; }
   .event-card { padding: 16px; }
-  .voicenotes-section-dashboard { padding: 16px; }
-    }
+}
