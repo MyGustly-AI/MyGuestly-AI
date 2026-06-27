@@ -7,6 +7,17 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({
     adapter,
+    log: process.env.NODE_ENV === "production"
+      ? ["error"]
+      : [{ emit: "event", level: "query" }, "warn", "error"],
 });
+
+if (process.env.NODE_ENV !== "production") {
+  prisma.$on("query", (e) => {
+    if (e.duration > 200) {
+      console.warn(`[SLOW QUERY] ${e.duration}ms → ${e.query}`);
+    }
+  });
+}
 
 export default prisma;

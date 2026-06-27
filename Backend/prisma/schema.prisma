@@ -91,6 +91,10 @@ model Event {
   @@index([hostId])
   @@index([startDate])
   @@index([updatedAt])
+  @@index([status])
+  @@index([createdAt])
+  @@index([hostId, status])
+  @@index([hostId, createdAt])
 }
 
 // ─────────────────────────────────────────
@@ -114,6 +118,8 @@ model Guest {
   @@unique([eventId, email])
   @@unique([eventId, phone])
   @@index([eventId])
+  @@index([email])
+  @@index([createdAt])
 }
 
 // ─────────────────────────────────────────
@@ -142,6 +148,11 @@ model Invitation {
 
   @@index([eventId])
   @@index([token])
+  @@index([status])
+  @@index([userId])
+  @@index([sentAt])
+  @@index([eventId, status])
+  @@index([userId, status])
 }
 
 enum InvitationStatus {
@@ -171,6 +182,7 @@ model QRCode {
 
   @@index([code])
   @@index([eventId])
+  @@index([isScanned])
 }
 
 // ─────────────────────────────────────────
@@ -189,6 +201,7 @@ model CheckIn {
   guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
+  @@index([checkedAt])
 }
 
 // ─────────────────────────────────────────
@@ -219,6 +232,10 @@ model Media {
 
   @@index([eventId])
   @@index([uploaderId])
+  @@index([mediaType])
+  @@index([createdAt])
+  @@index([eventId, mediaType])
+  @@index([eventId, createdAt])
 }
 
 enum MediaType {
@@ -262,6 +279,11 @@ model Memory {
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
+  @@index([authorId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([eventId, type])
+  @@index([eventId, authorId])
 }
 
 enum MemoryType {
@@ -284,6 +306,8 @@ model Comment {
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([mediaId])
+  @@index([authorId])
+  @@index([createdAt])
 }
 
 // ─────────────────────────────────────────
@@ -301,6 +325,7 @@ model Like {
 
   @@unique([mediaId, userId])
   @@index([mediaId])
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────
@@ -323,6 +348,9 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([eventId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 enum NotificationType {

@@ -22,7 +22,10 @@ class GuestController extends BaseController {
     const hostId = req.user.id;
     const { fullName, email, phone } = req.body;
 
-    const event = await this.eventService.findById(eventId);
+    const event = await this.eventService.findById(eventId, {
+      id: true, hostId: true, title: true, eventCode: true,
+      startDate: true, endDate: true, location: true,
+    });
     if (event.hostId !== hostId) {
       return this.forbidden(
         res,
@@ -132,7 +135,9 @@ class GuestController extends BaseController {
     const hostId = req.user.id;
     const { guests } = req.body;
 
-    const event = await this.eventService.findById(eventId);
+    const event = await this.eventService.findById(eventId, {
+      id: true, hostId: true, title: true, eventCode: true, location: true,
+    });
     if (event.hostId !== hostId) {
       return this.forbidden(
         res,
@@ -151,45 +156,38 @@ class GuestController extends BaseController {
       eventId,
       normalized,
     );
-    // Try sending emails for guests that have an email address
-    try {
-      const invites = guests
-        .filter((g) => g.email)
-        .map((g) => ({ name: g.name || g.fullName, email: g.email }));
-      for (const g of invites) {
-        // Create a lightweight guest record to generate link
-        // Note: bulkInvite created records already, but we don't have their ids/qr tokens here.
-        // For now, send a simple notification with event details and request they visit the RSVP page.
-        const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}`;
-        try {
-          await emailQueue.add(
+
+    // Enqueue emails in parallel (no sequential await)
+    const invites = guests
+      .filter((g) => g.email)
+      .map((g) => ({ fullName: g.fullName || g.name, email: g.email }));
+
+    const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}`;
+
+    await Promise.allSettled(
+      invites.map((g) =>
+        emailQueue
+          .add(
             "invitation",
-            {
-              guest: { fullName: g.fullName, email: g.email },
-              event,
-              invitationLink,
-            },
+            { guest: { fullName: g.fullName, email: g.email }, event, invitationLink },
             { attempts: 3, backoff: { type: "exponential", delay: 60000 } },
-          );
-          logger.info("Bulk invitation email job queued", {
-            eventId: event.id,
-            guestEmail: g.email,
-          });
-        } catch (err) {
-          logger.error("Failed to enqueue bulk invitation email", {
-            eventId: event.id,
-            guestEmail: g.email,
-            error: err?.message || err,
-          });
-          console.error(
-            "Failed to enqueue bulk invitation email:",
-            err?.message || err,
-          );
-        }
-      }
-    } catch (err) {
-      console.error("Bulk invitation email(s) failed:", err?.message || err);
-    }
+          )
+          .then((job) => {
+            logger.info("Bulk invitation email job queued", {
+              eventId: event.id,
+              guestEmail: g.email,
+              jobId: job.id,
+            });
+          })
+          .catch((err) => {
+            logger.error("Failed to enqueue bulk invitation email", {
+              eventId: event.id,
+              guestEmail: g.email,
+              error: err?.message || err,
+            });
+          }),
+      ),
+    );
 
     this.created(res, "Guest invitations created", result);
   });
@@ -198,7 +196,7 @@ class GuestController extends BaseController {
     const { eventId, guestId } = req.params;
     const { status } = req.body;
 
-    const guest = await this.guestService.findById(guestId);
+    const guest = await this.guestService.findById(guestId, { id: true, eventId: true });
     if (guest.eventId !== eventId) {
       return this.badRequest(res, "Guest does not belong to this event");
     }
@@ -216,7 +214,7 @@ class GuestController extends BaseController {
     const hostId = req.user.id;
     const { status } = req.query;
 
-    const event = await this.eventService.findById(eventId);
+    const event = await this.eventService.findById(eventId, { id: true, hostId: true });
     if (event.hostId !== hostId) {
       return this.forbidden(res, "You can only view guests for your own event");
     }

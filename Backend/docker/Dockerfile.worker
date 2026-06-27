@@ -15,4 +15,6 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN chown -R appuser:appgroup /app
 USER appuser
 
-CMD ["node", "src/infra/queues/workers/emailWorker.js"]
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
+CMD ["node", "--max-old-space-size=512", "src/infra/queues/workers/emailWorker.js"]

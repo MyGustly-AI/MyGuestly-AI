@@ -17,10 +17,11 @@ export class BaseService {
   /**
    * Find by ID
    */
-  async findById(id) {
+  async findById(id, select) {
     try {
       const record = await this.model.findUnique({
         where: { id },
+        ...(select && { select }),
       });
 
       if (!record) {
@@ -39,16 +40,19 @@ export class BaseService {
   async findAll(
     where = {},
     skip = 0,
-    take = 10,
-    orderBy = { createdAt: "desc" }
+    take = 20,
+    orderBy = { createdAt: "desc" },
+    select
   ) {
     try {
+      const safeTake = Math.min(take, 100);
       const [records, total] = await Promise.all([
         this.model.findMany({
           where,
           skip,
-          take,
+          take: safeTake,
           orderBy,
+          ...(select && { select }),
         }),
         this.model.count({ where }),
       ]);
@@ -57,7 +61,7 @@ export class BaseService {
         data: records,
         total,
         skip,
-        take,
+        take: safeTake,
       };
     } catch (error) {
       throw this.handleError(error);
@@ -67,10 +71,11 @@ export class BaseService {
   /**
    * Find one with optional where condition
    */
-  async findOne(where) {
+  async findOne(where, select) {
     try {
       const record = await this.model.findFirst({
         where,
+        ...(select && { select }),
       });
 
       return record;
@@ -82,10 +87,11 @@ export class BaseService {
   /**
    * Create new record
    */
-  async create(data) {
+  async create(data, select) {
     try {
       const record = await this.model.create({
         data,
+        ...(select && { select }),
       });
 
       return record;
@@ -101,11 +107,12 @@ export class BaseService {
   /**
    * Update record
    */
-  async update(id, data) {
+  async update(id, data, select) {
     try {
       const record = await this.model.update({
         where: { id },
         data,
+        ...(select && { select }),
       });
 
       return record;
@@ -155,8 +162,8 @@ export class BaseService {
    */
   async exists(where) {
     try {
-      const record = await this.model.findFirst({ where });
-      return !!record;
+      const count = await this.model.count({ where });
+      return count > 0;
     } catch (error) {
       throw this.handleError(error);
     }

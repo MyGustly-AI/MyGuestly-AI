@@ -30,6 +30,7 @@ const envSchema = z.object({
   // App URLs
   APP_CLIENT_URL: z.string().url().default("http://localhost:5173"),
   APP_API_URL: z.string().url().default("http://localhost:5003"),
+  APP_URL: z.string().default("http://localhost:5003"),
 
   // Cloudinary
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
@@ -45,6 +46,10 @@ const envSchema = z.object({
 
   // OpenAI
   OPENAI_API_KEY: z.string().optional(),
+
+  // Performance
+  SLOW_QUERY_THRESHOLD_MS: z.coerce.number().default(200),
+  SLOW_REQUEST_THRESHOLD_MS: z.coerce.number().default(1000),
 
   // Optional
   EMAIL_FROM: z.string().optional(),
