@@ -33,7 +33,7 @@ export default function HostDashboard() {
           },
           {
             id: 2,
-            title: "Lago Tech Summit",
+            title: "Lagos Tech Summit",
             date: "July 22, 2026",
             rsvpProgress: 95,
             confirmed: 950,
