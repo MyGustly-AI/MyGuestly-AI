@@ -1,4 +1,3 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
@@ -42,16 +41,8 @@ function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
         <div className="loading-spinner" />
-        <span style={{ color: 'var(--text-muted)' }}>Loading...</span>
       </div>
     );
   }
@@ -161,4 +152,4 @@ export default function App() {
       </BrowserRouter>
     </AuthProvider>
   );
-  }
+      }
