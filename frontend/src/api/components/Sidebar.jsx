@@ -10,7 +10,7 @@ import './Sidebar.css';
 //   user  - { name, plan }
 // ------------------------------------------------------------------
 
-export default function Sidebar({ role = 'host', user = { name: 'Amara', plan: 'Host Account' } }) {
+export default function Sidebar({ role = 'host', user = { name: 'Host', plan: 'Host Account' } }) {
   const location = useLocation();
   const navigate = useNavigate();
 

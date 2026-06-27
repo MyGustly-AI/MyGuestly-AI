@@ -1,86 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../api/components/Sidebar';
+import { listEventsRequest } from '../api/events';
+import { useAuth } from '../context/AuthContext';
 import './HostHomePage.css';
-
-// ------------------------------------------------------------------
-// Static data — replace with API calls when connecting backend
-// ------------------------------------------------------------------
-
-const events = [
-  {
-    title:     "Amara & David's Wedding",
-    date:      'June 13, 2026',
-    rsvp:      82,
-    total:     500,
-    confirmed: '410 / 500 Guests confirmed',
-    type:      'Upcoming',
-    img:       '/wedding.jpg',
-  },
-  {
-    title:     'Lagos Tech Summit',
-    date:      'July 22, 2026',
-    rsvp:      95,
-    total:     1000,
-    confirmed: '950 / 1000 Guests confirmed',
-    type:      'In 31 Days',
-    img:       '/tech-summit.jpg',
-  },
-  {
-    title:     'Eko Charity Gala',
-    date:      'August 05, 2025',
-    rsvp:      100,
-    total:     300,
-    confirmed: '300 / 300 Guests attended',
-    type:      'History',
-    img:       '/charity-gala.jpg',
-  },
-  {
-    title:     'CEO 50th Birthday',
-    date:      'December 20, 2024',
-    rsvp:      null,
-    total:     2451,
-    confirmed: 'History Gallery',
-    type:      null,
-    memoriesLabel: 'Memories Captured',
-    memoriesCount: '2,451',
-    img:       '/birthday.jpg',
-  },
-  {
-    title:     'Heritage Gala Night',
-    date:      'September 12, 2024',
-    rsvp:      75,
-    total:     400,
-    confirmed: '300 / 400 guests confirmed',
-    type:      'Upcoming',
-    img:       '/heritage-gala.jpg',
-  },
-  {
-    title:     'Tech Innovators Summit',
-    date:      'October 5, 2024',
-    rsvp:      40,
-    total:     500,
-    confirmed: '200 / 500 guests confirmed',
-    type:      'Upcoming',
-    img:       '/innovators.jpg',
-  },
-];
-
-// ------------------------------------------------------------------
 
 export default function HostHomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeNav, setActiveNav] = useState('Home');
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navLinks = ['Home', 'Explore', 'History'];
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const status = activeNav === 'History' ? 'completed' : undefined;
+        const result = await listEventsRequest({ limit: 12, status });
+        const list = result?.data ?? result?.events ?? result ?? [];
+        setEvents(Array.isArray(list) ? list : []);
+      } catch (err) {
+        setError(err.message || 'Could not load events.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [activeNav]);
+
+  const totalConfirmed = events.reduce((sum, e) => sum + (e.confirmedGuests || 0), 0);
+  const upcomingCount = events.filter((e) => e.status !== 'completed' && e.status !== 'ended').length;
+
+  const formatDate = (d) => {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  const getEventBadge = (e) => {
+    if (e.status === 'completed' || e.status === 'ended') return 'History';
+    if (!e.startDate) return 'Upcoming';
+    const daysAway = Math.ceil((new Date(e.startDate) - new Date()) / (1000 * 60 * 60 * 24));
+    if (daysAway > 0 && daysAway <= 60) return `In ${daysAway} Days`;
+    return 'Upcoming';
+  };
+
   return (
     <div className="app-layout">
-      <Sidebar role="host" user={{ name: 'Amara', plan: 'Host Account' }} />
+      <Sidebar role="host" user={{ name: user?.fullName || 'Host', plan: 'Host Account' }} />
 
       <main className="main-content">
 
-        {/* Top nav bar */}
         <header className="home-topbar">
           <nav className="home-topbar-nav">
             {navLinks.map(n => (
@@ -108,19 +79,19 @@ export default function HostHomePage() {
 
         <div className="page-inner home-inner">
 
-          {/* Greeting */}
           <div className="home-greeting-row">
             <div>
               <h1 className="page-heading">
-                Welcome back, <span className="highlight">Amara Okeke</span>
+                Welcome back, <span className="highlight">{user?.fullName || 'Host'}</span>
               </h1>
               <p className="page-sub">
-                Your royal dashboard is ready. You have 3 events coming up this month with a total of 1,240 guests confirmed.
+                {loading
+                  ? 'Loading your events...'
+                  : `You have ${upcomingCount} event${upcomingCount === 1 ? '' : 's'} coming up with a total of ${totalConfirmed} guests confirmed.`}
               </p>
             </div>
           </div>
 
-          {/* CTA cards */}
           <div className="home-cta-row">
             <button
               className="cta-card cta-card-primary"
@@ -145,61 +116,76 @@ export default function HostHomePage() {
             </button>
           </div>
 
-          {/* Events grid */}
           <div className="section-row">
-            <span className="section-label-sm">Upcoming Events</span>
+            <span className="section-label-sm">{activeNav === 'History' ? 'Past Events' : 'Upcoming Events'}</span>
             <button className="view-all-btn">View All Events</button>
           </div>
 
-          <div className="events-grid">
-            {events.map((e, i) => (
-              <div
-                key={i}
-                className="event-card"
-                onClick={() => navigate('/host/invitation')}
-              >
-                <div className="event-card-img-wrap">
-                  <img src={e.img} alt={e.title} className="event-card-img" />
-                  {e.type && (
-                    <span className={`event-badge ${getBadgeClass(e.type)}`}>
-                      {e.type}
-                    </span>
-                  )}
-                </div>
-                <div className="event-card-body">
-                  <div className="event-card-date">
-                    <CalSmIcon />
-                    {e.date}
-                  </div>
-                  <h3 className="event-card-title">{e.title}</h3>
+          {error && <div className="auth-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-                  {e.memoriesLabel ? (
-                    <>
-                      <div className="event-card-memories-row">
-                        <span className="event-card-memories-label">{e.memoriesLabel}</span>
-                        <span className="event-card-memories-count">{e.memoriesCount}</span>
+          {loading && (
+            <p style={{ color: 'var(--text-light)' }}>Loading events...</p>
+          )}
+
+          {!loading && events.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <p style={{ color: 'var(--text-muted)', marginBottom: 12 }}>No events yet.</p>
+              <button className="btn-primary" onClick={() => navigate('/host/create-event')}>Create Your First Event</button>
+            </div>
+          )}
+
+          {!loading && events.length > 0 && (
+            <div className="events-grid">
+              {events.map((e) => {
+                const badge = getEventBadge(e);
+                const total = e.maxGuests || 0;
+                const confirmed = e.confirmedGuests || 0;
+                const rsvpPct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+
+                return (
+                  <div
+                    key={e.id}
+                    className="event-card"
+                    onClick={() => navigate('/host/invitation', { state: { eventId: e.id } })}
+                  >
+                    <div className="event-card-img-wrap">
+                      <img src={e.coverUrl || '/host.png'} alt={e.title} className="event-card-img" />
+                      <span className={`event-badge ${getBadgeClass(badge)}`}>
+                        {badge}
+                      </span>
+                    </div>
+                    <div className="event-card-body">
+                      <div className="event-card-date">
+                        <CalSmIcon />
+                        {formatDate(e.startDate)}
                       </div>
-                      <div className="event-card-history-tag">{e.confirmed}</div>
-                    </>
-                  ) : e.rsvp !== null ? (
-                    <>
-                      <div className="event-card-rsvp-row">
-                        <span className="event-card-rsvp-label">RSVP Progress</span>
-                        <span className="event-card-rsvp-pct">{e.rsvp}%</span>
-                      </div>
-                      <div className="progress-bar-wrap">
-                        <div
-                          className="progress-bar-fill"
-                          style={{ width: `${e.rsvp}%` }}
-                        />
-                      </div>
-                      <p className="event-card-count">{e.confirmed}</p>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
+                      <h3 className="event-card-title">{e.title}</h3>
+
+                      {badge === 'History' ? (
+                        <div className="event-card-history-tag">
+                          {confirmed} / {total} Guests attended
+                        </div>
+                      ) : (
+                        <>
+                          <div className="event-card-rsvp-row">
+                            <span className="event-card-rsvp-label">RSVP Progress</span>
+                            <span className="event-card-rsvp-pct">{rsvpPct}%</span>
+                          </div>
+                          <div className="progress-bar-wrap">
+                            <div
+                              className="progress-bar-fill"
+                              style={{ width: `${rsvpPct}%` }}
+                            />
+                          </div>
+                          <p className="event-card-count">{confirmed} / {total} Guests confirmed</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
     </div>
@@ -211,8 +197,6 @@ function getBadgeClass(type) {
   if (type === 'Upcoming')  return 'badge-upcoming';
   return 'badge-days';
 }
-
-// ── Icons ──────────────────────────────────────────────────────────
 
 function BellIcon() {
   return (

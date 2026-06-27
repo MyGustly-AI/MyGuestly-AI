@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || "https://myguestly-ai.onrender.com/api/v1";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://myguestly-ai-9fcu.onrender.com/";
 
 let accessToken = null;
 let onUnauthorized = null;
@@ -39,17 +39,17 @@ async function refreshAccessToken() {
   return refreshPromise;
 }
 
-async function request(path, { method = "GET", body, headers = {}, skipAuthRetry = false } = {}) {
+async function request(path, { method = "GET", body, headers = {}, skipAuthRetry = false, isFormData = false } = {}) {
   const doFetch = async () => {
     const res = await fetch(`${API_BASE_URL}${path}`, {
       method,
       credentials: "include",
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? (isFormData ? body : JSON.stringify(body)) : undefined,
     });
     return res;
   };

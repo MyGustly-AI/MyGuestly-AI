@@ -1,25 +1,153 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getMeRequest, updateProfileRequest, uploadAvatarRequest, uploadCoverRequest } from '../api/auth';
 import './ProfilePage.css';
 
-// ------------------------------------------------------------------
-// Profile page — matches screenshot with cover image, stats, bio,
-// contact info, map, and recent highlights gallery
-// ------------------------------------------------------------------
-
-const highlights = [
-  { src: '/highlight1.jpg', alt: 'Pink floral tablescape' },
-  { src: '/highlight2.jpg', alt: 'Purple lit stage' },
-  { src: '/highlight3.jpg', alt: 'Elegant canapés' },
-];
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { user: authUser, setUser } = useAuth();
+
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Edit modal state
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ 
+    fullName: '', 
+    phone: '',
+    bio: '',
+    website: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  // Avatar upload
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const avatarInputRef = useRef(null);
+
+  // Cover upload
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const coverInputRef = useRef(null);
+
+  // ── Load profile on mount ──────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getMeRequest();
+        const me = data?.user ?? data;
+        setProfile(me);
+        setEditForm({
+          fullName: me?.fullName || '',
+          phone: me?.phone || '',
+          bio: me?.bio || '',
+          website: me?.website || '',
+        });
+      } catch (err) {
+        setError('Could not load profile. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // ── Avatar change ──────────────────────────────────────────────
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarFile(file);
+    try {
+      const updated = await uploadAvatarRequest(file);
+      const me = updated?.user ?? updated;
+      setProfile(me);
+      if (setUser) setUser(me);
+    } catch (err) {
+      setError('Could not upload profile photo. Please try again.');
+    }
+  };
+
+  // ── Cover change ─────────────────────────────────────────────────
+  const handleCoverChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setCoverPreview(URL.createObjectURL(file));
+    setCoverFile(file);
+    try {
+      const updated = await uploadCoverRequest(file);
+      const me = updated?.user ?? updated;
+      setProfile(me);
+      if (setUser) setUser(me);
+    } catch (err) {
+      setError('Could not upload cover photo. Please try again.');
+    }
+  };
+
+  // ── Save edits ─────────────────────────────────────────────────
+  const handleSave = async () => {
+    setSaveError(null);
+    setSaving(true);
+    try {
+      const updated = await updateProfileRequest({
+        fullName: editForm.fullName,
+        phone: editForm.phone,
+        bio: editForm.bio,
+        website: editForm.website,
+      });
+      const me = updated?.user ?? updated;
+      setProfile(me);
+      if (setUser) setUser(me);
+      setEditing(false);
+    } catch (err) {
+      setSaveError(err.message || 'Could not save changes. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Derived display values ────────────────────────────────────
+  const displayName = profile?.fullName || authUser?.fullName || 'User';
+  const displayRole = profile?.role
+    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1).toLowerCase()
+    : 'Host';
+  const displayEmail = profile?.email || authUser?.email || '—';
+  const displayPhone = profile?.phone || '—';
+  const displayLocation = profile?.location || 'Lagos, Nigeria';
+  const displayWebsite = profile?.website || '—';
+  const avatarSrc = avatarPreview || profile?.avatarUrl || '/profile.png';
+  const coverSrc = coverPreview || profile?.coverUrl || '/profile.png';
+  const memberSince = profile?.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
+    : '';
+
+  // ── Render ────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="profile-page" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <p style={{ color: 'var(--text-muted)' }}>Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="profile-page" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <p style={{ color: '#e11d48' }}>{error}</p>
+        <button className="profile-edit-btn" style={{ marginTop: 16, maxWidth: 200 }} onClick={() => window.location.reload()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
 
-      {/* Top nav */}
+      {/* ── Top Navigation Bar ──────────────────────────────────── */}
       <header className="profile-topbar">
         <span className="profile-logo">
           My<span className="profile-logo-purple">Guestly</span>{' '}
@@ -32,146 +160,282 @@ export default function ProfilePage() {
           <button className="profile-nav-link active">Profile</button>
         </nav>
         <div className="profile-topbar-right">
-          <button className="profile-icon-btn" onClick={() => navigate('/notifications')}>
+          <button className="profile-icon-btn" onClick={() => navigate('/notification')}>
             <BellIcon />
           </button>
-          <img src="/profile.png" alt="User" className="profile-topbar-avatar" />
+          <img src={avatarSrc} alt="User" className="profile-topbar-avatar" />
         </div>
       </header>
 
       <div className="profile-body">
 
-        {/* Cover + avatar + info */}
+        {/* ── Cover + Avatar + Info + Actions ────────────────────── */}
         <div className="profile-cover-card">
-          <div className="profile-cover-img-wrap">
-            <img src="/cover-bg.jpg" alt="Cover" className="profile-cover-img" />
+          <div className="profile-cover-img-wrap" style={{ cursor: 'pointer' }} onClick={() => coverInputRef.current.click()}>
+            <img src={coverSrc} alt="Cover" className="profile-cover-img" />
+            <div style={{
+              position: 'absolute', bottom: 10, right: 10,
+              background: 'rgba(0,0,0,0.55)', borderRadius: 8,
+              padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 6,
+              color: '#fff', fontSize: 12, fontWeight: 600
+            }}>
+              <CameraIcon size={14} color="#fff" /> Change Cover
+            </div>
+            <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverChange} />
           </div>
           <div className="profile-cover-bottom">
-            <img src="/profile.png" alt="Amara Okeke" className="profile-main-avatar" />
-            <div className="profile-cover-info">
-              <h1 className="profile-name-lg">
-                Amara Okeke
-                <span className="profile-premium-badge">
-                  <ShieldSmIcon /> PREMIUM HOST
-                </span>
-              </h1>
-              <p className="profile-member-since">MEMBER SINCE OCT 2021 • LAGOS, NIGERIA</p>
+            
+            {/* Clickable avatar with camera icon */}
+            <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => avatarInputRef.current.click()}>
+              <img src={avatarSrc} alt={displayName} className="profile-main-avatar" />
+              <div style={{
+                position: 'absolute', bottom: 4, right: 4,
+                background: 'var(--primary,#7c3aed)', borderRadius: '50%',
+                width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}>
+                <CameraIcon size={14} color="#fff" />
+              </div>
+              <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
             </div>
-            <div className="profile-cover-actions">
-              <button className="profile-msg-btn">Message Host</button>
-              <button className="profile-share-btn"><ShareIcon /> Share Profile</button>
+
+            {/* Name, badges, and action buttons */}
+            <div style={{ flex: 1 }}>
+              <h1 className="profile-name-lg">
+                {displayName}
+                {profile?.isPremium && (
+                  <span className="profile-premium-badge">
+                    <ShieldSmIcon /> PREMIUM HOST
+                  </span>
+                )}
+              </h1>
+              <p className="profile-member-since">
+                {memberSince ? `MEMBER SINCE ${memberSince} • ` : ''}{displayLocation.toUpperCase()}
+              </p>
+              
+              <div className="profile-cover-actions">
+                <button className="profile-msg-btn">Message Host</button>
+                <button className="profile-share-btn" onClick={() => navigator.share?.({ title: displayName, url: window.location.href })}>
+                  <ShareIcon /> Share Profile
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Stats bar */}
+        {/* ── Stats Bar ───────────────────────────────────────────── */}
         <div className="profile-stats-card">
           <div className="profile-stat">
-            <span className="profile-stat-val">42</span>
+            <span className="profile-stat-val">{profile?.eventsHosted ?? 0}</span>
             <span className="profile-stat-label">Events Hosted</span>
           </div>
           <div className="profile-stat-divider" />
           <div className="profile-stat">
-            <span className="profile-stat-val">1.2k</span>
+            <span className="profile-stat-val">
+              {profile?.memoriesCaptured >= 1000
+                ? `${(profile.memoriesCaptured / 1000).toFixed(1)}k`
+                : profile?.memoriesCaptured ?? 0}
+            </span>
             <span className="profile-stat-label">Memories Captured</span>
           </div>
           <div className="profile-stat-divider" />
           <div className="profile-stat">
-            <span className="profile-stat-val">98%</span>
+            <span className="profile-stat-val">{profile?.rsvpRate != null ? `${profile.rsvpRate}%` : '—'}</span>
             <span className="profile-stat-label">RSVP Rate</span>
           </div>
         </div>
 
-        {/* Main content row */}
+        {/* ── Main Content Row (Left: Bio + Highlights | Right: Contact + Map) ── */}
         <div className="profile-content-row">
 
-          {/* Left: bio + highlights */}
+          {/* ── LEFT COLUMN ─────────────────────────────────────── */}
           <div className="profile-left">
-
-            {/* Bio card */}
+            
+            {/* Bio Section */}
             <div className="profile-card">
-              <div className="profile-bio-header">
-                <h3 className="profile-bio-title">Crafting Unforgettable Events</h3>
-                <span className="profile-quote-mark">99</span>
+              <div className="profile-bio-section">
+                <div className="profile-quote-wrap">
+                  <span className="profile-quote-mark">99</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 className="profile-bio-title">Crafting Unforgettable Events</h3>
+                  <p className="profile-bio-text">
+                    {profile?.bio || 'No bio yet. Click "Edit Profile" to add one.'}
+                  </p>
+                  <button className="profile-edit-btn" onClick={() => setEditing(true)}>
+                    Edit Profile
+                  </button>
+                </div>
               </div>
-              <p className="profile-bio-text">
-                With over a decade of experience in the luxury hospitality sector across Lagos State,
-                I specialize in curating high-stakes social events where every detail is a performance.
-                My passion lies in the intersection of traditional Nigerian warmth and contemporary
-                global prestige. From intimate ministerial dinners to expansive royal weddings, my
-                goal is always to create a digital and physical environment where guests feel like
-                the center of a celebration.
-              </p>
             </div>
 
-            {/* Recent highlights */}
+            {/* Recent Highlights */}
             <div className="profile-card">
               <div className="profile-highlights-header">
                 <h3 className="profile-bio-title">Recent Highlights</h3>
                 <button className="view-all-btn">VIEW ALL →</button>
               </div>
-              <div className="profile-highlights-grid">
-                {highlights.map((h, i) => (
-                  <div key={i} className="profile-highlight-item">
-                    <img src={h.src} alt={h.alt} />
-                  </div>
-                ))}
-              </div>
+              {profile?.highlights && profile.highlights.length > 0 ? (
+                <div className="profile-highlights-grid">
+                  {profile.highlights.map((h, i) => (
+                    <div key={i} className="profile-highlight-item">
+                      <img src={h.url || h.src} alt={h.alt || 'Highlight'} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  No highlights yet. Memories from your events will appear here.
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Right: contact + map */}
+          {/* ── RIGHT COLUMN ────────────────────────────────────── */}
           <div className="profile-right">
-
-            {/* Contact card */}
+            
+            {/* Host Contact Info */}
             <div className="profile-card">
-              <div className="profile-contact-label">HOST CONTACT</div>
+              <span className="profile-contact-label">HOST CONTACT</span>
+              
               <div className="profile-contact-list">
                 <div className="profile-contact-item">
                   <PhoneIcon />
                   <div>
                     <div className="profile-contact-type">PHONE</div>
-                    <div className="profile-contact-val">+234 803 000 1234</div>
+                    <div className="profile-contact-val">{displayPhone}</div>
                   </div>
                 </div>
                 <div className="profile-contact-item">
                   <PinIcon />
                   <div>
                     <div className="profile-contact-type">BASE LOCATION</div>
-                    <div className="profile-contact-val">Victoria Island, Lagos</div>
+                    <div className="profile-contact-val">{displayLocation}</div>
                   </div>
                 </div>
                 <div className="profile-contact-item">
                   <GlobeIcon />
                   <div>
                     <div className="profile-contact-type">WEBSITE</div>
-                    <div className="profile-contact-val profile-website">amaraokeke.events</div>
+                    <div className="profile-contact-val">{displayWebsite}</div>
                   </div>
                 </div>
               </div>
+
+              {/* Social Icons */}
               <div className="profile-social-row">
-                <button className="profile-social-btn"><GlobeIcon /></button>
-                <button className="profile-social-btn"><CameraIcon /></button>
-                <button className="profile-social-btn"><AtIcon /></button>
+                <button className="profile-social-btn" title="Website"><GlobeIcon /></button>
+                <button className="profile-social-btn" title="Instagram"><CameraIcon size={16} color="var(--primary,#7c3aed)" /></button>
+                <button className="profile-social-btn" title="Twitter"><AtIcon /></button>
               </div>
             </div>
 
-            {/* Map card */}
+            {/* Location Map */}
             <div className="profile-map-card">
               <div className="profile-map-placeholder">
                 <div className="profile-map-pin-label">
-                  <PinIcon /> Lagos, Nigeria
+                  <PinIcon /> {displayLocation}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ── Edit Profile Modal ───────────────────────────────────── */}
+      {editing && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: 32,
+            width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 16,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-dark,#1a1a2e)' }}>Edit Profile</h3>
+
+            {saveError && <p style={{ color: '#e11d48', fontSize: 13, margin: 0 }}>{saveError}</p>}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#888', textTransform: 'uppercase' }}>Full Name</label>
+              <input
+                className="input-field"
+                value={editForm.fullName}
+                onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))}
+                placeholder="Your full name"
+                style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14, fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#888', textTransform: 'uppercase' }}>Phone</label>
+              <input
+                className="input-field"
+                value={editForm.phone}
+                onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                placeholder="+234 800 000 0000"
+                style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14, fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#888', textTransform: 'uppercase' }}>Website</label>
+              <input
+                className="input-field"
+                type="url"
+                value={editForm.website}
+                onChange={e => setEditForm(f => ({ ...f, website: e.target.value }))}
+                placeholder="https://yourwebsite.com"
+                style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14, fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#888', textTransform: 'uppercase' }}>Bio</label>
+              <textarea
+                className="input-field"
+                value={editForm.bio}
+                onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))}
+                placeholder="Tell us about yourself and your event style..."
+                style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14, fontFamily: 'inherit', minHeight: 100, resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <button
+                onClick={() => { setEditing(false); setSaveError(null); }}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #e0e0e0',
+                  background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={e => e.target.style.background = '#fff'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+                  background: 'var(--primary,#7c3aed)', color: '#fff',
+                  fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+                  opacity: saving ? 0.7 : 1, transition: 'all 0.2s'
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Icons ──────────────────────────────────────────────────────────
+// ── Icon Components ────────────────────────────────────────────────
 
 function BellIcon() {
   return (
@@ -193,9 +457,7 @@ function ShieldSmIcon() {
 function ShareIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="18" cy="5" r="3"/>
-      <circle cx="6" cy="12" r="3"/>
-      <circle cx="18" cy="19" r="3"/>
+      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
       <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
       <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
     </svg>
@@ -229,9 +491,9 @@ function GlobeIcon() {
   );
 }
 
-function CameraIcon() {
+function CameraIcon({ size = 16, color = 'var(--primary,#7c3aed)' }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary,#7c3aed)" strokeWidth="2">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
       <circle cx="12" cy="13" r="4"/>
     </svg>

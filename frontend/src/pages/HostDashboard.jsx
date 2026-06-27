@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../api/components/Sidebar';
 import { listEventsRequest } from '../api/events';
+import { listGuestsRequest } from '../api/guests';
 import { useAuth } from '../context/AuthContext';
 import './HostDashboard.css';
 
+// TEMP: Recent Activity has no backend route yet (no activity/feed endpoint exists
+// in the backend as of this build). Replace this with a real feed once the
+// teammate adds an activity log route. Remove this block entirely if you'd
+// rather not show fake data in the meantime.
 const activities = [
   {
     name: 'Bolaji Ogundele',
@@ -42,11 +47,16 @@ export default function HostDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [pendingInvites, setPendingInvites] = useState(null);
+  const [checkedInCount, setCheckedInCount] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
   useEffect(() => {
     (async () => {
       try {
         const result = await listEventsRequest({ limit: 5 });
-        setEvents(result?.data ?? result ?? []);
+        const list = result?.data ?? result?.events ?? result ?? [];
+        setEvents(Array.isArray(list) ? list : []);
       } catch (err) {
         setError(err.message || 'Could not load events.');
       } finally {
@@ -54,6 +64,49 @@ export default function HostDashboard() {
       }
     })();
   }, []);
+
+  // Pending invites + checked-in are computed by pulling guest lists across
+  // all of the host's events and tallying status, since there's no dedicated
+  // aggregate stats endpoint yet.
+  useEffect(() => {
+    if (loading || events.length === 0) {
+      if (!loading) setStatsLoading(false);
+      return;
+    }
+
+    (async () => {
+      setStatsLoading(true);
+      try {
+        const guestLists = await Promise.all(
+          events.map((e) =>
+            listGuestsRequest(e.id, { limit: 500 }).catch(() => null)
+          )
+        );
+
+        let pending = 0;
+        let checkedIn = 0;
+
+        guestLists.forEach((result) => {
+          if (!result) return;
+          const list = result?.data ?? result?.guests ?? result ?? [];
+          const guests = Array.isArray(list) ? list : [];
+          guests.forEach((g) => {
+            const status = g.status;
+            if (!status || status === 'PENDING') pending += 1;
+            if (g.checkedIn || status === 'CHECKED_IN') checkedIn += 1;
+          });
+        });
+
+        setPendingInvites(pending);
+        setCheckedInCount(checkedIn);
+      } catch {
+        setPendingInvites(null);
+        setCheckedInCount(null);
+      } finally {
+        setStatsLoading(false);
+      }
+    })();
+  }, [loading, events]);
 
   const featuredEvent = events[0];
 
@@ -63,8 +116,18 @@ export default function HostDashboard() {
   const stats = [
     { label: 'TOTAL EVENTS', value: loading ? '...' : String(totalEvents), badge: '', badgeType: 'up' },
     { label: 'TOTAL RSVPS', value: loading ? '...' : String(totalRsvps), badge: '', badgeType: 'up' },
-    { label: 'PENDING INVITES', value: '—', badge: '', badgeType: 'warn' },
-    { label: 'CHECKED-IN', value: '—', badge: '', badgeType: 'ok' },
+    {
+      label: 'PENDING INVITES',
+      value: statsLoading ? '...' : pendingInvites === null ? '—' : String(pendingInvites),
+      badge: '',
+      badgeType: 'warn',
+    },
+    {
+      label: 'CHECKED-IN',
+      value: statsLoading ? '...' : checkedInCount === null ? '—' : String(checkedInCount),
+      badge: '',
+      badgeType: 'ok',
+    },
   ];
 
   const filtered = activities.filter(a => {
@@ -97,7 +160,7 @@ export default function HostDashboard() {
                 <SettingsIcon />
               </button>
               <img
-                src="/profile.png"
+                src={user?.avatarUrl || user?.coverUrl || '/profile.png'}
                 alt="User"
                 className="header-avatar"
                 onClick={() => navigate('/profile')}
