@@ -1,9 +1,4 @@
-/**
- * Main Routes Index
- * Centralizes all API routes
- * API v1 Routes
- * /api/v1/*
- */
+import "dotenv/config"; // Must be the very first line
 import { Router } from "express";
 const router = Router();
 

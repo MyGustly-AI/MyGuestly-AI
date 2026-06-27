@@ -471,3 +471,47 @@ This route verifies the QR/TOTP flow and marks the guest as checked in if the co
 - Auth failures return HTTP 401.
 - Authorization failures return HTTP 403.
 - Resource not found errors return HTTP 404.
+
+---
+
+## 9. AI Integration routes
+
+### POST /api/v1/ai/organize
+
+Analyzes and categorizes a list of media descriptions into event moments (e.g., Ceremony, Reception) using the LLM.
+
+Auth required.
+
+Body:
+
+```json
+{
+  "mediaItems": [
+    "A photo of the bride and groom at the altar",
+    "People dancing energetically under neon lights",
+    "Cutting the massive 3-tier cake"
+  ]
+}
+```
+
+---
+
+### GET /api/v1/ai/events/:eventId/timeline
+
+Gets an AI-generated event timeline clustering media by time gaps.
+
+No auth required.
+
+No body.
+
+---
+
+### POST /api/v1/ai/events/:eventId/retag
+
+Enqueues background AI jobs to completely retag all media for a specific event.
+
+Auth required (HOST).
+
+No body.
+
+---

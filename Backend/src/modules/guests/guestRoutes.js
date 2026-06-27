@@ -40,4 +40,11 @@ router.put(
   guestController.updateRsvp
 );
 
+router.delete(
+  "/:guestId",
+  authMiddleware,
+  authorize("HOST"),
+  guestController.deleteGuest
+);
+
 export default router;

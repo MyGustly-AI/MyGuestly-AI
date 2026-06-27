@@ -242,6 +242,27 @@ class GuestController extends BaseController {
       "Guest list retrieved"
     );
   });
+
+  deleteGuest = this.asyncHandler(async (req, res) => {
+    const { eventId, guestId } = req.params;
+    const hostId = req.user.id;
+
+    const event = await this.eventService.findById(eventId);
+    if (event.hostId !== hostId) {
+      return this.forbidden(
+        res,
+        "You can only delete guests from your own event"
+      );
+    }
+
+    const guest = await this.guestService.findById(guestId);
+    if (guest.eventId !== eventId) {
+      return this.badRequest(res, "Guest does not belong to this event");
+    }
+
+    await this.guestService.delete(guestId);
+    this.success(res, "Guest deleted successfully");
+  });
 }
 
 export default new GuestController();

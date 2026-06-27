@@ -752,7 +752,21 @@ Use `Authorization: Bearer <ACCESS_TOKEN>` for protected endpoints. Replace `:ev
   - PUT / POST `/api/v1/events/:eventId/guests/:guestId/rsvp` — update RSVP (PENDING/CONFIRMED/DECLINED)
 
 - Verification & check-in
-  - POST `/api/v1/verify-gate/:token` — gate scanner: submits TOTP and token; performs atomic check-in and returns result
+  - POST `/api/v1/verify-gate/:token` — gate scanner: submits TOTP and token; performs atomic check-in and returns result via API and Socket.io
+
+- Media & Memories
+  - GET `/api/v1/events/:eventId/media/upload-url` — get pre-signed Cloudinary URL
+  - POST `/api/v1/events/:eventId/media` — register uploaded media and queue background processing
+  - GET `/api/v1/events/:eventId/media` — fetch event media gallery
+  - POST `/api/v1/events/:eventId/media/:mediaId/comments` — add comment
+  - POST `/api/v1/events/:eventId/media/:mediaId/likes` — toggle like
+  - POST `/api/v1/events/:eventId/media/:mediaId/voice-note` — attach voice note
+  - GET `/api/v1/events/:eventId/memories` — fetch memory timeline
+
+- AI Integration
+  - POST `/api/v1/ai/organize` — auto-categorize media descriptions into meaningful moments
+  - GET `/api/v1/ai/events/:eventId/timeline` — auto-generate event timeline from media clusters
+  - POST `/api/v1/ai/events/:eventId/retag` — batch retag all media for an event
 
 - Email & background processing (internal)
   - Background worker listens to the `email` queue (BullMQ) and processes `invitation` jobs by calling Resend or Nodemailer fallback.

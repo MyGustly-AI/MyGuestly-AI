@@ -21,11 +21,11 @@ const envSchema = z.object({
   // CORS
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
 
-  // Email
-  EMAIL_HOST: z.string().min(1),
+  // Email (legacy SMTP — kept for local fallback, Resend is used in production)
+  EMAIL_HOST: z.string().optional(),
   EMAIL_PORT: z.coerce.number().default(587),
-  EMAIL_SERVICE_USER: z.string().email(),
-  EMAIL_SERVICE_PASS: z.string().min(1),
+  EMAIL_SERVICE_USER: z.string().optional(),
+  EMAIL_SERVICE_PASS: z.string().optional(),
 
   // App URLs
   APP_CLIENT_URL: z.string().url().default("http://localhost:5173"),
@@ -39,6 +39,11 @@ const envSchema = z.object({
 
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // Gmail API (used for sending emails via HTTPS — no SMTP)
+  GMAIL_USER: z.string().optional(),
+  GMAIL_REFRESH_TOKEN: z.string().optional(),
 
   // Termii SMS
   TERMII_API_KEY: z.string().optional(),

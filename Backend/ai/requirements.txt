@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+requests
+numpy
+opencv-python-headless
+imagehash
+Pillow
+ultralytics
+face_recognition
+pydub
+librosa
+scipy

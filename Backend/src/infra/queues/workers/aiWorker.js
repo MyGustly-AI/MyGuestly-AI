@@ -52,14 +52,30 @@ export function startAiWorker() {
       let tags = [];
 
       try {
+        const userContent = [
+          {
+            type: "text",
+            text: `Tag this event media with id ${mediaId} of type ${media.mediaType} from event ${media.eventId}.`,
+          },
+        ];
+
+        if (media.mediaType === "IMAGE" && media.url) {
+          userContent.push({
+            type: "image_url",
+            image_url: {
+              url: media.url,
+            },
+          });
+        }
+
         const result = await callOpenAI([
           {
             role: "system",
-            content: `You are an event media tagger. Analyze media and return a JSON object with an array of labels from: ${TAG_CANDIDATES.join(", ")}. Also return a confidence score 0-1 for each. Format: { "labels": [{"label": "...", "confidence": 0.9}] }`,
+            content: `You are an event media tagger. Analyze the provided media and return a JSON object with an array of labels from: ${TAG_CANDIDATES.join(", ")}. Also return a confidence score 0-1 for each. Format: { "labels": [{"label": "...", "confidence": 0.9}] }`,
           },
           {
             role: "user",
-            content: `Tag this event media with id ${mediaId} of type ${media.mediaType} from event ${media.eventId}.`,
+            content: userContent,
           },
         ]);
 

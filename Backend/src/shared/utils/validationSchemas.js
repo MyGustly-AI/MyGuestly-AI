@@ -62,7 +62,7 @@ export const eventSchemas = {
       const rsvp = new Date(value.rsvpDeadline);
       const start = new Date(value.startDate);
       if (rsvp >= start) {
-        return helpers.message('"rsvpDeadline" must be before "startDate"');
+        return helpers.message("\"rsvpDeadline\" must be before \"startDate\"");
       }
     }
 
@@ -71,7 +71,7 @@ export const eventSchemas = {
       const end = new Date(value.endDate);
       const start = new Date(value.startDate);
       if (end <= start) {
-        return helpers.message('"endDate" must be after "startDate"');
+        return helpers.message("\"endDate\" must be after \"startDate\"");
       }
     }
 
@@ -99,7 +99,7 @@ export const eventSchemas = {
       const rsvp = new Date(value.rsvpDeadline);
       const start = new Date(value.startDate);
       if (rsvp >= start) {
-        return helpers.message('"rsvpDeadline" must be before "startDate"');
+        return helpers.message("\"rsvpDeadline\" must be before \"startDate\"");
       }
     }
 
@@ -107,7 +107,7 @@ export const eventSchemas = {
       const end = new Date(value.endDate);
       const start = new Date(value.startDate);
       if (end <= start) {
-        return helpers.message('"endDate" must be after "startDate"');
+        return helpers.message("\"endDate\" must be after \"startDate\"");
       }
     }
 

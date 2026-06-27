@@ -19,7 +19,7 @@ export const initSocket = (server) => {
     // Host can join their event's room to listen for check-ins
     socket.on("joinEventRoom", (eventId) => {
       socket.join(`event:${eventId}`);
-      logger.info(`Socket joined event room`, { socketId: socket.id, eventId });
+      logger.info("Socket joined event room", { socketId: socket.id, eventId });
     });
 
     socket.on("leaveEventRoom", (eventId) => {
