@@ -6,7 +6,7 @@ import './HostDashboard.css';
 
 export default function HostDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth(); // ✅ Get logged-in user
+  const { user } = useAuth(); // Get logged-in user
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -20,7 +20,7 @@ export default function HostDashboard() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Simulate API call – replace with real data
+        // Replace with your actual API call
         const sampleEvents = [
           {
             id: 1,
@@ -33,7 +33,7 @@ export default function HostDashboard() {
           },
           {
             id: 2,
-            title: "Lagos Tech Summit",
+            title: "Lago Tech Summit",
             date: "July 22, 2026",
             rsvpProgress: 95,
             confirmed: 950,
@@ -74,8 +74,8 @@ export default function HostDashboard() {
     return 'var(--danger)';
   };
 
-  // ✅ Extract user's first name
-  const userName = user?.name?.split(' ')[0] || 'Guest';
+  // Extract first name, fallback to 'Guest'
+  const firstName = user?.name?.split(' ')[0] || 'Guest';
 
   return (
     <div className="app-layout">
@@ -83,12 +83,10 @@ export default function HostDashboard() {
       <div className="main-content">
         <div className="page-inner">
           <div className="dashboard-container">
-            {/* Welcome Section – uses real user name */}
+            {/* Welcome Section with User's Name */}
             <div className="welcome-section">
               <div>
-                <h1 className="welcome-title">
-                  Welcome back, {userName}! 👋
-                </h1>
+                <h1 className="welcome-title">Welcome back, {firstName}! 👋</h1>
                 <p className="welcome-subtitle">
                   Your royal dashboard is ready. You have {events.length} events with a total of {stats.totalRSVPs.toLocaleString()} guests confirmed.
                 </p>
@@ -141,7 +139,7 @@ export default function HostDashboard() {
               </div>
             </div>
 
-            {/* Events Section */}
+            {/* Active Events */}
             <div className="events-section">
               <div className="section-header">
                 <h2>Active Events</h2>
@@ -206,50 +204,6 @@ export default function HostDashboard() {
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Voice Notes Section – placed after events, not blocking */}
-            <div className="voicenotes-section-dashboard">
-              <div className="voicenotes-header">
-                <h2>💝 Live Voice Notes</h2>
-                <span className="live-badge">🔴 LIVE</span>
-              </div>
-              <div className="voicenotes-list">
-                <div className="voicenote-item">
-                  <div className="voicenote-info">
-                    <span className="voicenote-title">Bridal Morning Reflection</span>
-                    <span className="voicenote-author">Bride's Sister</span>
-                  </div>
-                  <div className="voicenote-controls">
-                    <button className="play-btn">▶</button>
-                    <span className="voicenote-duration">3:45</span>
-                    <div className="voicenote-waveform">
-                      <div className="waveform-bars">
-                        {[...Array(12)].map((_, i) => (
-                          <div key={i} className="waveform-bar" style={{ height: `${Math.random() * 10 + 5}px` }} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="voicenote-item">
-                  <div className="voicenote-info">
-                    <span className="voicenote-title">The Town Crier's Speech</span>
-                    <span className="voicenote-author">Family Elder</span>
-                  </div>
-                  <div className="voicenote-controls">
-                    <button className="play-btn">▶</button>
-                    <span className="voicenote-duration">5:20</span>
-                    <div className="voicenote-waveform">
-                      <div className="waveform-bars">
-                        {[...Array(12)].map((_, i) => (
-                          <div key={i} className="waveform-bar" style={{ height: `${Math.random() * 10 + 5}px` }} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
