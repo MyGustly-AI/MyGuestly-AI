@@ -2,8 +2,38 @@
 import React from 'react';
 import { useMobileMenu } from '../hooks/useMobileMenu';
 
+<<<<<<< HEAD
 export function Sidebar() {  // Named export – used with { Sidebar }
   const { isMobile, menuOpen, setMenuOpen } = useMobileMenu();
+=======
+// ------------------------------------------------------------------
+// Sidebar
+// Props:
+//   role  - 'host' | 'guest'
+//   user  - { name, plan }
+// ------------------------------------------------------------------
+
+export default function Sidebar({ role = 'host', user = { name: 'Host', plan: 'Host Account' } }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const hostLinks = [
+    { href: '/host/dashboard',   label: 'Dashboard',    icon: <GridIcon /> },
+    { href: '/host/home',        label: 'Events',       icon: <CalIcon /> },
+    { href: '/host/guest-list',  label: 'RSVP Manager', icon: <UsersIcon /> },
+    { href: '/gallery',          label: 'Gallery',      icon: <GalleryIcon /> },
+    { href: '/host/admin-roles', label: 'Check-In',     icon: <CheckIcon /> },
+  ];
+
+  const guestLinks = [
+    { href: '/guest/dashboard', label: 'Dashboard', icon: <GridIcon /> },
+    { href: '/timeline',        label: 'Timeline',   icon: <TimelineIcon /> },
+    { href: '/gallery',         label: 'Gallery',    icon: <GalleryIcon /> },
+    { href: '/scan-qr',         label: 'Scan QR',    icon: <QRIcon /> },
+  ];
+
+  const links = role === 'host' ? hostLinks : guestLinks;
+>>>>>>> in
 
   return (
     <>

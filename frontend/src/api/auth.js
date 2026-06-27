@@ -40,6 +40,18 @@ export async function updateProfileRequest(payload) {
   return api.patch("/auth/profile", payload);
 }
 
+export async function uploadAvatarRequest(file) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  return api.patch("/auth/profile/avatar", formData, { isFormData: true });
+}
+
+export async function uploadCoverRequest(file) {
+  const formData = new FormData();
+  formData.append("cover", file);
+  return api.patch("/auth/profile/cover", formData, { isFormData: true });
+}
+
 export async function changePasswordRequest({ currentPassword, newPassword }) {
   return api.patch("/auth/password", { currentPassword, newPassword });
 }

@@ -1,101 +1,54 @@
 // src/pages/HostDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sidebar } from '../components/Sidebar';
+import Sidebar from '../components/Sidebar';
+import { listEventsRequest } from '../api/events';
 import { useAuth } from '../context/AuthContext';
 import './HostDashboard.css';
+
+const activities = [
+  {
+    name: 'Bolaji Ogundele',
+    action: 'confirmed RSVP',
+    event: "Amara & David's Wedding",
+    time: '2 mins ago',
+    type: 'rsvp',
+    badge: 'Attending',
+  },
+  {
+    name: 'Kemi Adeyemi',
+    action: 'checked in',
+    event: 'Corporate AI Summit',
+    time: '15 mins ago',
+    type: 'checkin',
+    timeOnly: '10:42 AM',
+  },
+  {
+    name: '12 new memories uploaded',
+    action: '',
+    event: "Amara & David's Wedding",
+    time: '1 hour ago',
+    type: 'gallery',
+    extra: '+10',
+  },
+];
+
+const TABS = ['All', 'RSVPs', 'Check-ins'];
 
 export default function HostDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalEvents: 0,
-    totalRSVPs: 0,
-    pendingInvites: 0,
-    checkedIn: 0
-  });
+  const [error, setError] = useState(null);
 
-  // Sample data - replace with actual API calls
   useEffect(() => {
-    // Simulate API fetch
-    const fetchDashboardData = async () => {
-      setLoading(true);
+    (async () => {
       try {
-        // This would be your API call
-        // const response = await api.get('/host/dashboard');
-        // setEvents(response.data.events);
-        // setStats(response.data.stats);
-        
-        // Sample data for demonstration
-        const sampleEvents = [
-          {
-            id: 1,
-            title: "Amara & David's Wedding",
-            date: "June 13, 2026",
-            rsvpProgress: 82,
-            confirmed: 410,
-            total: 500,
-            status: "upcoming"
-          },
-          {
-            id: 2,
-            title: "Lago Tech Summit",
-            date: "July 22, 2026",
-            rsvpProgress: 95,
-            confirmed: 950,
-            total: 1000,
-            status: "upcoming"
-          },
-          {
-            id: 3,
-            title: "Eko Charity Gala",
-            date: "August 05, 2026",
-            rsvpProgress: 100,
-            confirmed: 300,
-            total: 300,
-            status: "upcoming"
-          },
-          {
-            id: 4,
-            title: "CEO 50th Birthday",
-            date: "December 20, 2024",
-            rsvpProgress: 100,
-            confirmed: 2451,
-            total: 2451,
-            status: "past",
-            memoryCount: 2451
-          },
-          {
-            id: 5,
-            title: "Heritage Gala Night",
-            date: "September 12, 2024",
-            rsvpProgress: 75,
-            confirmed: 300,
-            total: 400,
-            status: "past"
-          },
-          {
-            id: 6,
-            title: "Tech Innovators Summit",
-            date: "October 5, 2024",
-            rsvpProgress: 40,
-            confirmed: 200,
-            total: 500,
-            status: "past"
-          }
-        ];
-
-        setEvents(sampleEvents);
-        setStats({
-          totalEvents: sampleEvents.length,
-          totalRSVPs: sampleEvents.reduce((acc, e) => acc + e.confirmed, 0),
-          pendingInvites: sampleEvents.reduce((acc, e) => acc + (e.total - e.confirmed), 0),
-          checkedIn: Math.floor(sampleEvents.reduce((acc, e) => acc + e.confirmed, 0) * 0.7)
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard:', error);
+        const result = await listEventsRequest({ limit: 5 });
+        setEvents(result?.data ?? result ?? []);
+      } catch (err) {
+        setError(err.message || 'Could not load events.');
       } finally {
         setLoading(false);
       }
@@ -104,11 +57,60 @@ export default function HostDashboard() {
     fetchDashboardData();
   }, []);
 
-  const getStatusBadge = (status) => {
-    if (status === 'upcoming') return 'badge-success';
-    if (status === 'past') return 'badge-gold';
-    return 'badge-warning';
-  };
+  // Pending invites + checked-in are computed by pulling guest lists across
+  // all of the host's events and tallying status, since there's no dedicated
+  // aggregate stats endpoint yet.
+  useEffect(() => {
+    if (loading || events.length === 0) {
+      if (!loading) setStatsLoading(false);
+      return;
+    }
+
+    (async () => {
+      setStatsLoading(true);
+      try {
+        const guestLists = await Promise.all(
+          events.map((e) =>
+            listGuestsRequest(e.id, { limit: 500 }).catch(() => null)
+          )
+        );
+
+        let pending = 0;
+        let checkedIn = 0;
+
+        guestLists.forEach((result) => {
+          if (!result) return;
+          const list = result?.data ?? result?.guests ?? result ?? [];
+          const guests = Array.isArray(list) ? list : [];
+          guests.forEach((g) => {
+            const status = g.status;
+            if (!status || status === 'PENDING') pending += 1;
+            if (g.checkedIn || status === 'CHECKED_IN') checkedIn += 1;
+          });
+        });
+
+        setPendingInvites(pending);
+        setCheckedInCount(checkedIn);
+      } catch {
+        setPendingInvites(null);
+        setCheckedInCount(null);
+      } finally {
+        setStatsLoading(false);
+      }
+    })();
+  }, [loading, events]);
+
+  const featuredEvent = events[0];
+
+  const totalEvents = events.length;
+  const totalRsvps = events.reduce((sum, e) => sum + (e.confirmedGuests || 0), 0);
+
+  const stats = [
+    { label: 'TOTAL EVENTS', value: loading ? '...' : String(totalEvents), badge: '', badgeType: 'up' },
+    { label: 'TOTAL RSVPS', value: loading ? '...' : String(totalRsvps), badge: '', badgeType: 'up' },
+    { label: 'PENDING INVITES', value: '—', badge: '', badgeType: 'warn' },
+    { label: 'CHECKED-IN', value: '—', badge: '', badgeType: 'ok' },
+  ];
 
   const getProgressColor = (progress) => {
     if (progress >= 80) return 'var(--success)';
@@ -118,64 +120,44 @@ export default function HostDashboard() {
 
   return (
     <div className="app-layout">
-      <Sidebar />
-      <div className="main-content">
-        <div className="page-inner">
-          <div className="dashboard-container">
-            {/* Welcome Section */}
-            <div className="welcome-section">
-              <div>
-                <h1 className="welcome-title">
-                  Welcome back, {user?.name || 'Amara Okeke'} 👋
-                </h1>
-                <p className="welcome-subtitle">
-                  Your royal dashboard is ready. You have {events.length} events with a total of {stats.totalRSVPs.toLocaleString()} guests confirmed.
-                </p>
-              </div>
-              <div className="welcome-actions">
-                <button 
-                  className="btn-primary"
-                  onClick={() => navigate('/host/create-event')}
-                >
-                  + Host New Event
-                </button>
-                <button 
-                  className="btn-outline"
-                  onClick={() => navigate('/host/events')}
-                >
-                  View Events
-                </button>
-              </div>
-            </div>
+      <Sidebar role="host" user={{ name: user?.fullName || 'Host', plan: 'Host Account' }} />
 
-            {/* Stats Cards */}
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">📅</div>
-                <div className="stat-content">
-                  <span className="stat-value">{stats.totalEvents}</span>
-                  <span className="stat-label">Total Events</span>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">📊</div>
-                <div className="stat-content">
-                  <span className="stat-value">{stats.totalRSVPs.toLocaleString()}</span>
-                  <span className="stat-label">Total RSVPs</span>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">📨</div>
-                <div className="stat-content">
-                  <span className="stat-value">{stats.pendingInvites}</span>
-                  <span className="stat-label">Pending Invites</span>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">✅</div>
-                <div className="stat-content">
-                  <span className="stat-value">{stats.checkedIn.toLocaleString()}</span>
-                  <span className="stat-label">Checked-in</span>
+      <main className="main-content">
+        <div className="dashboard-inner">
+
+          <div className="dashboard-greeting">
+            <div className="greeting-center">
+              <h1 className="dashboard-heading">
+                Welcome back, <span className="highlight">{user?.fullName?.split(' ')[0] || 'Host'}!</span>
+              </h1>
+              <p className="dashboard-sub">
+                {loading ? 'Loading your events...' : `You have ${totalEvents} event${totalEvents === 1 ? '' : 's'} on your dashboard.`}
+              </p>
+            </div>
+            <div className="dashboard-header-icons">
+              <button className="icon-btn" onClick={() => navigate('/notification')}>
+                <BellIcon />
+              </button>
+              <button className="icon-btn" onClick={() => navigate('/settings')}>
+                <SettingsIcon />
+              </button>
+              <img
+                src="/profile.png"
+                alt="User"
+                className="header-avatar"
+                onClick={() => navigate('/profile')}
+              />
+            </div>
+          </div>
+
+          {error && <div className="auth-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+          <div className="stats-row">
+            {stats.map((s, i) => (
+              <div key={i} className="stat-card">
+                <div className="stat-card-top">
+                  <span className="stat-card-label">{s.label}</span>
+                  {s.badge && <span className={`stat-badge stat-badge--${s.badgeType}`}>{s.badge}</span>}
                 </div>
               </div>
             </div>
