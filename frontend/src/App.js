@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import OAuthCallback from './pages/OAuthCallback';
 
 // Host Pages
 import HostDashboard from './pages/HostDashboard';
@@ -32,7 +33,7 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import NotificationPage from './pages/NotificationPage';
 
-// Components
+// Navigation Component
 import Navigation from './components/Navigation';
 
 // Protected Route Wrapper
@@ -41,13 +42,16 @@ function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh' 
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '16px'
       }}>
         <div className="loading-spinner" />
+        <span style={{ color: 'var(--text-muted)' }}>Loading...</span>
       </div>
     );
   }
@@ -59,7 +63,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// Layout for protected routes (with navigation)
+// Layout for protected routes
 function DashboardLayout({ children }) {
   return (
     <div className="app-layout">
@@ -81,107 +85,73 @@ export default function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          
+
           {/* Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
 
-          {/* Protected Host Routes with Navigation */}
+          {/* Protected Host Routes */}
           <Route path="/host/dashboard" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <HostDashboard />
-              </DashboardLayout>
+              <DashboardLayout><HostDashboard /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/host/home" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <HostHomePage />
-              </DashboardLayout>
+              <DashboardLayout><HostHomePage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/host/create-event" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <CreateEventPage />
-              </DashboardLayout>
+              <DashboardLayout><CreateEventPage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/host/guest-list" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <GuestListPage />
-              </DashboardLayout>
+              <DashboardLayout><GuestListPage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/host/invitation" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <InvitationPage />
-              </DashboardLayout>
+              <DashboardLayout><InvitationPage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/host/admin-roles" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <AdminRolesPage />
-              </DashboardLayout>
+              <DashboardLayout><AdminRolesPage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/gallery" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <GalleryPage />
-              </DashboardLayout>
+              <DashboardLayout><GalleryPage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/timeline" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <TimelinePage />
-              </DashboardLayout>
+              <DashboardLayout><TimelinePage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/scan-qr" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <ScanQRPage />
-              </DashboardLayout>
+              <DashboardLayout><ScanQRPage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/profile" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <ProfilePage />
-              </DashboardLayout>
+              <DashboardLayout><ProfilePage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/settings" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <SettingsPage />
-              </DashboardLayout>
+              <DashboardLayout><SettingsPage /></DashboardLayout>
             </ProtectedRoute>
           } />
-          
           <Route path="/notification" element={
             <ProtectedRoute>
-              <DashboardLayout>
-                <NotificationPage />
-              </DashboardLayout>
+              <DashboardLayout><NotificationPage /></DashboardLayout>
             </ProtectedRoute>
           } />
 
@@ -191,4 +161,4 @@ export default function App() {
       </BrowserRouter>
     </AuthProvider>
   );
-}
+  }
