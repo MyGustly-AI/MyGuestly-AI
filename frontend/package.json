@@ -3,11 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-<<<<<<< HEAD
     "axios": "^1.6.0",
-=======
     "html5-qrcode": "^2.3.8",
->>>>>>> in
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.16.0",
