@@ -3,7 +3,6 @@ import React from 'react';
 
 export default function GoogleAuthButton({ disabled }) {
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth endpoint
     const apiUrl = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api';
     window.location.href = `${apiUrl}/auth/google`;
   };
@@ -42,4 +41,4 @@ export default function GoogleAuthButton({ disabled }) {
       Google
     </button>
   );
-}
+        }
