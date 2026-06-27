@@ -7,6 +7,7 @@ import { BaseService } from "../../shared/base/BaseService.js";
 import { AppError } from "../../shared/utils/AppError.js";
 import { QRUtil } from "../../shared/utils/helpers.js";
 import { logger } from "../../infra/loggers/logger.js";
+import { getCachedOrFetch, invalidateCache } from "../../shared/utils/cache.js";
 
 export class EventService extends BaseService {
   constructor(prisma) {
@@ -53,41 +54,38 @@ export class EventService extends BaseService {
    */
   async getEvent(eventId) {
     try {
-      const event = await this.findById(eventId);
+      return getCachedOrFetch(`event:${eventId}`, 300, async () => {
+        const event = await this.findById(eventId, {
+          id: true, title: true, description: true, eventCategory: true,
+          venueName: true, address: true, coverUrl: true, themeAccent: true,
+          rsvpDeadline: true, startDate: true, endDate: true, eventCode: true,
+          status: true, maxGuests: true, publishedAt: true, startedAt: true,
+          endedAt: true, hostId: true, location: true, createdAt: true, updatedAt: true,
+        });
 
-      if (!event) {
-        throw AppError.notFound("Event not found");
-      }
+        if (!event) {
+          throw AppError.notFound("Event not found");
+        }
 
-      // Get guest statistics from invitations (Invitation.status holds RSVP status)
-      const [guestStats, totalGuests, checkInCount] = await Promise.all([
-        this.prisma.invitation.groupBy({
-          by: ["status"],
-          where: { eventId },
-          _count: true,
-        }),
-        this.prisma.guest.count({ where: { eventId } }),
-        this.prisma.checkIn.count({ where: { eventId } }),
-      ]);
+        const [guestStats, totalGuests] = await Promise.all([
+          this.prisma.guest.groupBy({
+            by: ["rsvpStatus"],
+            where: { eventId },
+            _count: true,
+          }),
+          this.prisma.guest.count({ where: { eventId } }),
+        ]);
 
-      const stats = {
-        total: totalGuests,
-        confirmed: 0,
-        declined: 0,
-        pending: 0,
-      };
+        const stats = { total: totalGuests, confirmed: 0, declined: 0, pending: 0 };
 
-      guestStats.forEach((stat) => {
-        if (stat.status === "ACCEPTED") stats.confirmed = stat._count;
-        else if (stat.status === "DECLINED") stats.declined = stat._count;
+        guestStats.forEach((stat) => {
+          if (stat.rsvpStatus === "CONFIRMED") stats.confirmed = stat._count;
+          else if (stat.rsvpStatus === "DECLINED") stats.declined = stat._count;
+          else if (stat.rsvpStatus === "PENDING") stats.pending = stat._count;
+        });
+
+        return { ...event, stats };
       });
-
-      stats.pending = Math.max(0, stats.total - stats.confirmed - stats.declined - checkInCount);
-
-      return {
-        ...event,
-        stats,
-      };
     } catch (error) {
       throw this.handleError(error);
     }
@@ -124,6 +122,7 @@ export class EventService extends BaseService {
       const { eventCode, status, ...safeData } = updateData;
 
       const event = await this.update(eventId, safeData);
+      await invalidateCache([`event:${eventId}`]);
       return this.formatEventResponse(event);
     } catch (error) {
       throw this.handleError(error);
@@ -137,7 +136,7 @@ export class EventService extends BaseService {
    */
   async publishEvent(eventId) {
     try {
-      const event = await this.findById(eventId);
+      const event = await this.findById(eventId, { id: true, status: true });
 
       if (!event) {
         throw AppError.notFound("Event not found");
@@ -152,10 +151,8 @@ export class EventService extends BaseService {
       }
 
       // Update status
-      const updated = await this.update(eventId, {
-        status: "ACTIVE",
-        publishedAt: new Date(),
-      });
+      const updated = await this.update(eventId, { status: "ACTIVE", publishedAt: new Date() });
+      await invalidateCache([`event:${eventId}`, `event:${eventId}:dashboard`]);
 
       return this.formatEventResponse(updated);
     } catch (error) {
@@ -170,7 +167,7 @@ export class EventService extends BaseService {
    */
   async startEvent(eventId) {
     try {
-      const event = await this.findById(eventId);
+      const event = await this.findById(eventId, { id: true, status: true });
 
       if (!event) {
         throw AppError.notFound("Event not found");
@@ -180,10 +177,8 @@ export class EventService extends BaseService {
         throw AppError.badRequest("Only published events can be started");
       }
 
-      const updated = await this.update(eventId, {
-        status: "ONGOING",
-        startedAt: new Date(),
-      });
+      const updated = await this.update(eventId, { status: "ONGOING", startedAt: new Date() });
+      await invalidateCache([`event:${eventId}`, `event:${eventId}:dashboard`]);
 
       return this.formatEventResponse(updated);
     } catch (error) {
@@ -198,7 +193,7 @@ export class EventService extends BaseService {
    */
   async endEvent(eventId) {
     try {
-      const event = await this.findById(eventId);
+      const event = await this.findById(eventId, { id: true, status: true });
 
       if (!event) {
         throw AppError.notFound("Event not found");
@@ -208,10 +203,8 @@ export class EventService extends BaseService {
         throw AppError.badRequest("Invalid event status for ending");
       }
 
-      const updated = await this.update(eventId, {
-        status: "COMPLETED",
-        endedAt: new Date(),
-      });
+      const updated = await this.update(eventId, { status: "COMPLETED", endedAt: new Date() });
+      await invalidateCache([`event:${eventId}`, `event:${eventId}:dashboard`]);
 
       return this.formatEventResponse(updated);
     } catch (error) {
@@ -226,7 +219,7 @@ export class EventService extends BaseService {
    */
   async deleteEvent(eventId) {
     try {
-      const event = await this.findById(eventId);
+      const event = await this.findById(eventId, { id: true, status: true });
 
       if (!event) {
         throw AppError.notFound("Event not found");
@@ -239,12 +232,12 @@ export class EventService extends BaseService {
         );
       }
 
-      // Delete all related data (guests, media, etc.)
-      await this.prisma.guest.deleteMany({ where: { eventId } });
-      await this.prisma.media.deleteMany({ where: { eventId } });
-
-      // Delete event
-      await this.delete(eventId);
+      // Delete all related data in parallel
+      await Promise.all([
+        this.prisma.guest.deleteMany({ where: { eventId } }),
+        this.prisma.media.deleteMany({ where: { eventId } }),
+        this.delete(eventId),
+      ]);
 
       return true;
     } catch (error) {
@@ -257,16 +250,18 @@ export class EventService extends BaseService {
    * @param {String} eventId - Event ID
    * @returns {Object} - { maxGuests, currentGuests, availableSpots, isFull }
    */
-  async checkCapacity(eventId) {
+  async checkCapacity(eventId, event) {
     try {
-      const event = await this.findById(eventId);
-
       if (!event) {
-        throw AppError.notFound("Event not found");
+        event = await this.findById(eventId, { id: true, maxGuests: true });
+
+        if (!event) {
+          throw AppError.notFound("Event not found");
+        }
       }
 
-      const guestCount = await this.prisma.invitation.count({
-        where: { eventId, status: "ACCEPTED" },
+      const guestCount = await this.prisma.guest.count({
+        where: { eventId, rsvpStatus: "CONFIRMED" },
       });
 
       const availableSpots = Math.max(0, event.maxGuests - guestCount);
@@ -294,36 +289,32 @@ export class EventService extends BaseService {
    */
   async getEventDashboard(eventId) {
     try {
-      const event = await this.getEvent(eventId);
+      return getCachedOrFetch(`event:${eventId}:dashboard`, 60, async () => {
+        const event = await this.getEvent(eventId);
 
-      // Get check-in stats
-      const checkIns = await this.prisma.checkIn.count({
-        where: { eventId },
+        const [checkIns, mediaCount, capacity] = await Promise.all([
+          this.prisma.guest.count({ where: { eventId, checkedIn: true } }),
+          this.prisma.media.count({ where: { eventId } }),
+          this.checkCapacity(eventId, event),
+        ]);
+
+        return {
+          event: {
+            id: event.id,
+            title: event.title,
+            eventCode: event.eventCode,
+            status: event.status,
+            startDate: event.startDate,
+            endDate: event.endDate,
+          },
+          guests: event.stats,
+          capacity,
+          checkIns,
+          media: mediaCount,
+          publishedAt: event.publishedAt,
+          startedAt: event.startedAt,
+        };
       });
-
-      const mediaCount = await this.prisma.media.count({
-        where: { eventId },
-      });
-
-      // Get capacity info
-      const capacity = await this.checkCapacity(eventId);
-
-      return {
-        event: {
-          id: event.id,
-          title: event.title,
-          eventCode: event.eventCode,
-          status: event.status,
-          startDate: event.startDate,
-          endDate: event.endDate,
-        },
-        guests: event.stats,
-        capacity,
-        checkIns,
-        media: mediaCount,
-        publishedAt: event.publishedAt,
-        startedAt: event.startedAt,
-      };
     } catch (error) {
       throw this.handleError(error);
     }

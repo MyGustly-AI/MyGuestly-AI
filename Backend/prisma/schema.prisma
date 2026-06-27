@@ -1,10 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
+  datasource db {
   provider = "postgresql"
+  
 }
+
+// ─────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────
 
 model User {
   id         String    @id @default(uuid())
@@ -12,7 +22,6 @@ model User {
   email      String    @unique
   phone      String?   @unique
   password   String
-  googleId   String?   @unique
   role       Role      @default(HOST)
   isVerified Boolean   @default(false)
   avatarUrl  String?
@@ -30,19 +39,22 @@ model User {
 
   @@index([email])
   @@index([deletedAt])
+  @@index([role])
+  @@index([isVerified])
+  @@index([createdAt])
 }
 
 model Event {
   id            String    @id @default(uuid())
   title         String
   description   String?
-  eventCategory String?
-  venueName     String?
-  address       String?
-  location      String?
-  coverUrl      String?
-  themeAccent   String?
-  rsvpDeadline  DateTime?
+  eventCategory String?   // Category such as wedding, corporate, etc.
+  venueName     String?   // Event venue name
+  address       String?   // Venue address
+  location      String?   // Optional shorthand location or city
+  coverUrl      String?   // Event cover image url
+  themeAccent   String?   // Personalization/theme accent color or label
+  rsvpDeadline  DateTime? // RSVP deadline to close guest responses
   startDate     DateTime
   endDate       DateTime
 
@@ -59,14 +71,13 @@ model Event {
   hostId String
   host   User   @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
-  guests        Guest[]
-  media         Media[]
-  invitations   Invitation[]
-  qrCodes       QRCode[]
-  checkIns      CheckIn[]
-  memories      Memory[]
+  guests      Guest[]  // An event can have many invited guests
+  media       Media[]  // An event has a shared collaborative timeline
+  invitations Invitation[]
+  qrCodes     QRCode[]
+  checkIns    CheckIn[]
+  memories    Memory[]
   notifications Notification[]
-  feedbacks     Feedback[]
 
   masterTrackUrl String?     
   voiceNotes     VoiceNote[]
@@ -74,7 +85,16 @@ model Event {
   @@index([hostId])
   @@index([startDate])
   @@index([updatedAt])
+  @@index([status])
+  @@index([createdAt])
+  @@index([hostId, status])
+  @@index([hostId, createdAt])
 }
+
+// ─────────────────────────────────────────
+// GUEST
+// Bulk-imported guest list entry may or may not have a registered User account
+// ─────────────────────────────────────────
 
 model Guest {
   id        String    @id @default(uuid())
@@ -96,7 +116,14 @@ model Guest {
   @@unique([eventId, email])
   @@unique([eventId, phone])
   @@index([eventId])
+  @@index([email])
+  @@index([createdAt])
 }
+
+// ─────────────────────────────────────────
+// INVITATION
+// Tracks RSVP status per guest per event
+// ─────────────────────────────────────────
 
 model Invitation {
   id        String           @id @default(uuid())
@@ -105,7 +132,6 @@ model Invitation {
   sentAt    DateTime?
   sentBy    String?
   rsvpAt    DateTime?
-  deletedAt DateTime?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   eventId   String
@@ -119,7 +145,10 @@ model Invitation {
   @@index([eventId])
   @@index([token])
   @@index([status])
+  @@index([userId])
+  @@index([sentAt])
   @@index([eventId, status])
+  @@index([userId, status])
 }
 
 model QRCode {
@@ -128,9 +157,7 @@ model QRCode {
   isScanned   Boolean   @default(false)
   scannedAt   DateTime?
   scannedByIp String?
-  deletedAt   DateTime?
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 
   invitationId String     @unique
   eventId      String
@@ -139,7 +166,13 @@ model QRCode {
 
   @@index([code])
   @@index([eventId])
+  @@index([isScanned])
 }
+
+// ─────────────────────────────────────────
+// CHECK-IN
+// Written when a guest scans in at the gate
+// ─────────────────────────────────────────
 
 model CheckIn {
   id          String    @id @default(uuid())
@@ -155,7 +188,7 @@ model CheckIn {
   guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
-  @@index([eventId, guestId])
+  @@index([checkedAt])
 }
 
 enum MediaStatus {
@@ -196,42 +229,52 @@ model Media {
   uploaderId String
   uploader   User   @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
 
-  tags       MediaTag[]
-  guestFaces GuestFace[]
-  comments   Comment[]
-  likes      Like[]
+  tags     MediaTag[]
+  comments Comment[]
+  likes    Like[]
 
   @@index([eventId])
   @@index([uploaderId])
-  @@index([eventId, status])
-  @@index([eventId, pHash])
-  @@index([eventId, clutchName])
+  @@index([mediaType])
+  @@index([createdAt])
+  @@index([eventId, mediaType])
+  @@index([eventId, createdAt])
 }
 
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+}
+
+// ─────────────────────────────────────────
+// MEDIA TAG
+// AI-generated labels attached to media
+// ─────────────────────────────────────────
+
 model MediaTag {
-  id         String   @id @default(uuid())
+  id         String @id @default(uuid())
   label      String
   confidence Float?
-  source     String   @default("ai")
-  createdAt  DateTime @default(now())
 
   mediaId String
   media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   @@unique([mediaId, label])
   @@index([mediaId])
-  @@index([label])
 }
 
+// ─────────────────────────────────────────
+// MEMORY
+// Text or voice note left by a guest
+// ─────────────────────────────────────────
+
 model Memory {
-  id           String     @id @default(uuid())
-  type         MemoryType
-  content      String?
-  audioUrl     String?
-  durationSecs Int?
-  deletedAt    DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id        String     @id @default(uuid())
+  type      MemoryType
+  content   String?
+  audioUrl  String?
+  createdAt DateTime   @default(now())
 
   eventId  String
   event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -240,6 +283,10 @@ model Memory {
 
   @@index([eventId])
   @@index([authorId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([eventId, type])
+  @@index([eventId, authorId])
 }
 
 model Comment {
@@ -255,7 +302,13 @@ model Comment {
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([mediaId])
+  @@index([authorId])
+  @@index([createdAt])
 }
+
+// ─────────────────────────────────────────
+// LIKE
+// ─────────────────────────────────────────
 
 model Like {
   id        String    @id @default(uuid())
@@ -270,7 +323,12 @@ model Like {
 
   @@unique([mediaId, userId])
   @@index([mediaId])
+  @@index([userId])
 }
+
+// ─────────────────────────────────────────
+// NOTIFICATION
+// ─────────────────────────────────────────
 
 model Notification {
   id        String           @id @default(uuid())
@@ -279,9 +337,7 @@ model Notification {
   body      String
   isRead    Boolean          @default(false)
   metadata  Json?
-  deletedAt DateTime?
   createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
 
   userId  String
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -290,6 +346,9 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([eventId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 model GuestFace {

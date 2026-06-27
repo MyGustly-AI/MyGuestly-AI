@@ -15,9 +15,7 @@ The backend currently supports:
 - Event creation, publishing, lifecycle transitions, and host-level dashboards
 - Guest invitation and bulk invitation workflows
 - RSVP updates and guest management
-- QR gate verification with anti-duplicate check-in protection and real-time Socket.io dashboard updates
-- Collaborative Media gallery with direct Cloudinary uploads, background video/image processing, comments, and likes
-- Memories module for guests to leave text and voice notes
+- QR gate verification with anti-duplicate check-in protection
 - Redis-backed rate limiting and token hardening
 - Structured logging for auth, event, invitation, QR, queue, and worker activity
 - Docker-based development and deployment for API, worker, PostgreSQL, Redis, Prisma Studio, and NGINX
@@ -81,8 +79,6 @@ Backend/
 │   │   ├── auth/
 │   │   ├── events/
 │   │   ├── guests/
-│   │   ├── media/
-│   │   ├── memories/
 │   │   └── verification/
 │   ├── orchestration/
 │   ├── routes/
@@ -256,9 +252,8 @@ The QR verification workflow is handled by [src/modules/verification/verifyContr
 Key capabilities:
 - Validate a one-time check-in token
 - Verify a time-based QR code using TOTP logic
-- Prevent duplicate scans and double check-ins using atomic constraints on the CheckIn model
+- Prevent duplicate scans and double check-ins
 - Create an audit check-in record for successful scans
-- Emit real-time `guestCheckedIn` Socket.io events to the host's dashboard
 - Emit structured logs for successful and rejected check-ins
 
 ---
@@ -279,12 +274,11 @@ The email pipeline is built for reliability and separation of concerns.
 
 ### Worker layer
 
-- `src/infra/queues/workers/emailWorker.js` processes jobs for:
+- [src/infra/queues/workers/emailWorker.js](src/infra/queues/workers/emailWorker.js) processes jobs for:
   - verification emails
   - password reset emails
   - account deletion emails
   - invitation emails
-- `src/infra/queues/workers/mediaWorker.js` processes background media jobs, calling Cloudinary explicitly to generate `webp` thumbnails, `mp4` videos, and extract rich EXIF/AI tags.
 
 ### Job behavior
 

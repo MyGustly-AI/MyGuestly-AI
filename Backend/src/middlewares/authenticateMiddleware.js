@@ -22,11 +22,7 @@ export const authenticate = async (req, res, next) => {
     // Verify token and extract user info
     const decoded = jwt.verify(token, env.JWT_SECRET);
 
-    req.user = {
-      id: decoded.userId || decoded.id,
-      role: decoded.role,
-      ...decoded,
-    };
+    req.user = decoded;
 
     next();
   } catch {

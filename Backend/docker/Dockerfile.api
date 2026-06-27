@@ -4,21 +4,24 @@ WORKDIR /app
 
 RUN apk add --no-cache bash openssl libc6-compat
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-RUN chown appuser:appgroup /app
-
-USER appuser
-
-COPY --chown=appuser:appgroup package*.json ./
+COPY package*.json ./
 RUN npm ci
 
-COPY --chown=appuser:appgroup . .
-COPY --chown=appuser:appgroup prisma.config.ts ./
+# copy everything EXCEPT node_modules via .dockerignore
+COPY . .
+COPY prisma.config.ts ./
 
-COPY --chown=appuser:appgroup src ./src
+COPY src ./src
+# Prisma generate
 RUN npx prisma generate
+
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
 
 EXPOSE 5003
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
+CMD ["sh", "-c", "npx prisma migrate deploy && node --max-old-space-size=512 src/server.js"]

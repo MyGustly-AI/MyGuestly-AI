@@ -126,10 +126,10 @@ export const eventSchemas = {
 // GUEST SCHEMAS
 export const guestSchemas = {
   invite: Joi.object({
-    fullName: Joi.string().min(2).max(100).required(),
+    name: Joi.string().min(2).max(100).required(),
     email: Joi.string().email().optional(),
     phone: Joi.string()
-      .pattern(/^\+?[0-9]{10,15}$/)
+      .pattern(/^[0-9]{10,15}$/)
       .optional(),
   }).or("email", "phone"),
 
@@ -137,10 +137,10 @@ export const guestSchemas = {
     guests: Joi.array()
       .items(
         Joi.object({
-          fullName: Joi.string().min(2).max(100).required(),
+          name: Joi.string().min(2).max(100).required(),
           email: Joi.string().email().optional(),
           phone: Joi.string()
-            .pattern(/^\+?[0-9]{10,15}$/)
+            .pattern(/^[0-9]{10,15}$/)
             .optional(),
         }).or("email", "phone")
       )
@@ -166,7 +166,6 @@ export const mediaSchemas = {
   upload: Joi.object({
     mediaType: Joi.string().valid("IMAGE", "VIDEO").required(),
     url: Joi.string().uri().required(),
-    publicId: Joi.string().optional(),
     caption: Joi.string().max(500).optional(),
   }),
 

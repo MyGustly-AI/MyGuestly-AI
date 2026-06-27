@@ -8,7 +8,7 @@ import QRCode from "qrcode";
 import env from "../../config/env.js";
 import { logger } from "../../infra/loggers/logger.js";
 
-const BASE_URL = env.APP_CLIENT_URL;
+const BASE_URL = env.APP_URL;
 
 class GuestController extends BaseController {
   constructor() {
@@ -22,7 +22,10 @@ class GuestController extends BaseController {
     const hostId = req.user.id;
     const { fullName, email, phone } = req.body;
 
-    const event = await this.eventService.findById(eventId);
+    const event = await this.eventService.findById(eventId, {
+      id: true, hostId: true, title: true, eventCode: true,
+      startDate: true, endDate: true, location: true,
+    });
     if (event.hostId !== hostId) {
       return this.forbidden(
         res,
@@ -65,7 +68,7 @@ class GuestController extends BaseController {
       location: event.location,
       token: invitationRecord.token,
       invitationLink: `${BASE_URL}/rsvp/${event.eventCode}/${invitationRecord.token}`,
-      rsvpStatus: invitationRecord.status,
+      rsvpStatus: guest.rsvpStatus,
     };
 
     // Generate QR image for the invitation token (data URL -> base64)
@@ -85,7 +88,7 @@ class GuestController extends BaseController {
     if (guest.email) {
       try {
         const job = await emailQueue.add(
-          "send_invitation",
+          "invitation",
           {
             guest,
             event,
@@ -132,7 +135,9 @@ class GuestController extends BaseController {
     const hostId = req.user.id;
     const { guests } = req.body;
 
-    const event = await this.eventService.findById(eventId);
+    const event = await this.eventService.findById(eventId, {
+      id: true, hostId: true, title: true, eventCode: true, location: true,
+    });
     if (event.hostId !== hostId) {
       return this.forbidden(
         res,
@@ -140,81 +145,58 @@ class GuestController extends BaseController {
       );
     }
 
+    // Ensure bulk payloads map `name` -> `fullName` for DB compatibility
     const normalized = guests.map((g) => ({
-      fullName: g.fullName,
+      fullName: g.fullName || g.name,
       email: g.email,
       phone: g.phone,
     }));
 
-    await this.guestService.bulkInviteGuests(eventId, normalized);
+    const result = await this.guestService.bulkInviteGuests(
+      eventId,
+      normalized,
+    );
 
-    // Find the created guests and create invitation records for each
-    const createdGuests = await prisma.guest.findMany({
-      where: { eventId, createdAt: { gte: new Date(Date.now() - 5000) } },
-    });
+    // Enqueue emails in parallel (no sequential await)
+    const invites = guests
+      .filter((g) => g.email)
+      .map((g) => ({ fullName: g.fullName || g.name, email: g.email }));
 
-    const mailResults = [];
-    for (const g of createdGuests) {
-      const invitationRecord = await this.guestService.getOrCreateInvitation(
-        eventId,
-        g.id,
-      );
+    const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}`;
 
-      // Generate QR for the invitation token
-      let qrBase64 = null;
-      try {
-        const qrDataUrl = await QRCode.toDataURL(invitationRecord.token, {
-          errorCorrectionLevel: "H",
-          width: 300,
-        });
-        qrBase64 = qrDataUrl.split(",")[1];
-      } catch (err) {
-        console.error("Failed to generate QR code image:", err?.message || err);
-      }
-
-      const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}/${invitationRecord.token}`;
-
-      if (g.email) {
-        try {
-          await emailQueue.add(
-            "send_invitation",
-            {
-              guest: { fullName: g.fullName, email: g.email },
-              event,
-              invitationLink,
-              qrImageBase64: qrBase64,
-              invitationId: invitationRecord.id,
-              hostId,
-            },
+    await Promise.allSettled(
+      invites.map((g) =>
+        emailQueue
+          .add(
+            "invitation",
+            { guest: { fullName: g.fullName, email: g.email }, event, invitationLink },
             { attempts: 3, backoff: { type: "exponential", delay: 60000 } },
-          );
-          mailResults.push({ guestId: g.id, enqueued: true });
-          logger.info("Bulk invitation email job queued", {
-            eventId: event.id,
-            guestEmail: g.email,
-            invitationId: invitationRecord.id,
-          });
-        } catch (err) {
-          logger.error("Failed to enqueue bulk invitation email", {
-            eventId: event.id,
-            guestEmail: g.email,
-            error: err?.message || err,
-          });
-        }
-      }
-    }
+          )
+          .then((job) => {
+            logger.info("Bulk invitation email job queued", {
+              eventId: event.id,
+              guestEmail: g.email,
+              jobId: job.id,
+            });
+          })
+          .catch((err) => {
+            logger.error("Failed to enqueue bulk invitation email", {
+              eventId: event.id,
+              guestEmail: g.email,
+              error: err?.message || err,
+            });
+          }),
+      ),
+    );
 
-    this.created(res, "Guest invitations created", {
-      invited: createdGuests.length,
-      mailsQueued: mailResults.length,
-    });
+    this.created(res, "Guest invitations created", result);
   });
 
   updateRsvp = this.asyncHandler(async (req, res) => {
     const { eventId, guestId } = req.params;
     const { status } = req.body;
 
-    const guest = await this.guestService.findById(guestId);
+    const guest = await this.guestService.findById(guestId, { id: true, eventId: true });
     if (guest.eventId !== eventId) {
       return this.badRequest(res, "Guest does not belong to this event");
     }
@@ -232,7 +214,7 @@ class GuestController extends BaseController {
     const hostId = req.user.id;
     const { status } = req.query;
 
-    const event = await this.eventService.findById(eventId);
+    const event = await this.eventService.findById(eventId, { id: true, hostId: true });
     if (event.hostId !== hostId) {
       return this.forbidden(res, "You can only view guests for your own event");
     }
