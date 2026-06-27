@@ -1,4 +1,3 @@
-// src/components/GoogleAuthButton.jsx
 import React from 'react';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 
@@ -47,4 +46,4 @@ export default function GoogleAuthButton({ disabled }) {
       Google
     </button>
   );
-        }
+}
