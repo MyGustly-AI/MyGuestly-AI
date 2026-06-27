@@ -1,4 +1,3 @@
-// src/pages/HostDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
@@ -7,7 +6,7 @@ import './HostDashboard.css';
 
 export default function HostDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuth(); // ✅ Get logged-in user
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -17,18 +16,11 @@ export default function HostDashboard() {
     checkedIn: 0
   });
 
-  // Sample data - replace with actual API calls
   useEffect(() => {
-    // Simulate API fetch
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // This would be your API call
-        // const response = await api.get('/host/dashboard');
-        // setEvents(response.data.events);
-        // setStats(response.data.stats);
-        
-        // Sample data for demonstration
+        // Simulate API call – replace with real data
         const sampleEvents = [
           {
             id: 1,
@@ -41,7 +33,7 @@ export default function HostDashboard() {
           },
           {
             id: 2,
-            title: "Lago Tech Summit",
+            title: "Lagos Tech Summit",
             date: "July 22, 2026",
             rsvpProgress: 95,
             confirmed: 950,
@@ -52,38 +44,10 @@ export default function HostDashboard() {
             id: 3,
             title: "Eko Charity Gala",
             date: "August 05, 2026",
-            rsvpProgress: 100,
-            confirmed: 300,
-            total: 300,
+            rsvpProgress: 10,
+            confirmed: 100,
+            total: 1000,
             status: "upcoming"
-          },
-          {
-            id: 4,
-            title: "CEO 50th Birthday",
-            date: "December 20, 2024",
-            rsvpProgress: 100,
-            confirmed: 2451,
-            total: 2451,
-            status: "past",
-            memoryCount: 2451
-          },
-          {
-            id: 5,
-            title: "Heritage Gala Night",
-            date: "September 12, 2024",
-            rsvpProgress: 75,
-            confirmed: 300,
-            total: 400,
-            status: "past"
-          },
-          {
-            id: 6,
-            title: "Tech Innovators Summit",
-            date: "October 5, 2024",
-            rsvpProgress: 40,
-            confirmed: 200,
-            total: 500,
-            status: "past"
           }
         ];
 
@@ -104,17 +68,14 @@ export default function HostDashboard() {
     fetchDashboardData();
   }, []);
 
-  const getStatusBadge = (status) => {
-    if (status === 'upcoming') return 'badge-success';
-    if (status === 'past') return 'badge-gold';
-    return 'badge-warning';
-  };
-
   const getProgressColor = (progress) => {
     if (progress >= 80) return 'var(--success)';
     if (progress >= 50) return 'var(--warning)';
     return 'var(--danger)';
   };
+
+  // ✅ Extract user's first name
+  const userName = user?.name?.split(' ')[0] || 'Guest';
 
   return (
     <div className="app-layout">
@@ -122,11 +83,11 @@ export default function HostDashboard() {
       <div className="main-content">
         <div className="page-inner">
           <div className="dashboard-container">
-            {/* Welcome Section */}
+            {/* Welcome Section – uses real user name */}
             <div className="welcome-section">
               <div>
                 <h1 className="welcome-title">
-                  Welcome back, {user?.name || 'Amara Okeke'} 👋
+                  Welcome back, {userName}! 👋
                 </h1>
                 <p className="welcome-subtitle">
                   Your royal dashboard is ready. You have {events.length} events with a total of {stats.totalRSVPs.toLocaleString()} guests confirmed.
@@ -141,7 +102,7 @@ export default function HostDashboard() {
                 </button>
                 <button 
                   className="btn-outline"
-                  onClick={() => navigate('/host/events')}
+                  onClick={() => navigate('/host/home')}
                 >
                   View Events
                 </button>
@@ -175,7 +136,7 @@ export default function HostDashboard() {
                 <div className="stat-icon">✅</div>
                 <div className="stat-content">
                   <span className="stat-value">{stats.checkedIn.toLocaleString()}</span>
-                  <span className="stat-label">Checked-in</span>
+                  <span className="stat-label">Checked-In</span>
                 </div>
               </div>
             </div>
@@ -184,7 +145,7 @@ export default function HostDashboard() {
             <div className="events-section">
               <div className="section-header">
                 <h2>Active Events</h2>
-                <button className="btn-ghost" onClick={() => navigate('/host/events')}>
+                <button className="btn-ghost" onClick={() => navigate('/host/home')}>
                   View All →
                 </button>
               </div>
@@ -209,13 +170,11 @@ export default function HostDashboard() {
                     <div key={event.id} className="event-card">
                       <div className="event-card-header">
                         <h3 className="event-title">{event.title}</h3>
-                        <span className={`badge ${getStatusBadge(event.status)}`}>
+                        <span className={`badge ${event.status === 'upcoming' ? 'badge-success' : 'badge-gold'}`}>
                           {event.status === 'upcoming' ? 'Upcoming' : 'Past'}
                         </span>
                       </div>
-                      
                       <p className="event-date">📅 {event.date}</p>
-                      
                       <div className="rsvp-section">
                         <div className="rsvp-header">
                           <span>RSVP Progress</span>
@@ -234,7 +193,6 @@ export default function HostDashboard() {
                           {event.confirmed.toLocaleString()} / {event.total.toLocaleString()} Guests confirmed
                         </p>
                       </div>
-
                       <div className="event-actions">
                         <button 
                           className="btn-outline"
@@ -243,13 +201,6 @@ export default function HostDashboard() {
                         >
                           Manage
                         </button>
-                        <button 
-                          className="btn-ghost"
-                          style={{ padding: '8px 16px', fontSize: '13px' }}
-                          onClick={() => navigate(`/event/${event.id}`)}
-                        >
-                          View
-                        </button>
                       </div>
                     </div>
                   ))}
@@ -257,37 +208,46 @@ export default function HostDashboard() {
               )}
             </div>
 
-            {/* Quick Actions */}
-            <div className="quick-actions">
-              <h2>Quick Actions</h2>
-              <div className="quick-actions-grid">
-                <div 
-                  className="quick-action-card"
-                  onClick={() => navigate('/host/create-event')}
-                >
-                  <span className="quick-icon">➕</span>
-                  <span className="quick-label">Create Event</span>
+            {/* Voice Notes Section – placed after events, not blocking */}
+            <div className="voicenotes-section-dashboard">
+              <div className="voicenotes-header">
+                <h2>💝 Live Voice Notes</h2>
+                <span className="live-badge">🔴 LIVE</span>
+              </div>
+              <div className="voicenotes-list">
+                <div className="voicenote-item">
+                  <div className="voicenote-info">
+                    <span className="voicenote-title">Bridal Morning Reflection</span>
+                    <span className="voicenote-author">Bride's Sister</span>
+                  </div>
+                  <div className="voicenote-controls">
+                    <button className="play-btn">▶</button>
+                    <span className="voicenote-duration">3:45</span>
+                    <div className="voicenote-waveform">
+                      <div className="waveform-bars">
+                        {[...Array(12)].map((_, i) => (
+                          <div key={i} className="waveform-bar" style={{ height: `${Math.random() * 10 + 5}px` }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div 
-                  className="quick-action-card"
-                  onClick={() => navigate('/host/guest-list')}
-                >
-                  <span className="quick-icon">👥</span>
-                  <span className="quick-label">Manage Guests</span>
-                </div>
-                <div 
-                  className="quick-action-card"
-                  onClick={() => navigate('/host/invitation')}
-                >
-                  <span className="quick-icon">📨</span>
-                  <span className="quick-label">Send Invites</span>
-                </div>
-                <div 
-                  className="quick-action-card"
-                  onClick={() => navigate('/gallery')}
-                >
-                  <span className="quick-icon">🖼️</span>
-                  <span className="quick-label">Gallery</span>
+                <div className="voicenote-item">
+                  <div className="voicenote-info">
+                    <span className="voicenote-title">The Town Crier's Speech</span>
+                    <span className="voicenote-author">Family Elder</span>
+                  </div>
+                  <div className="voicenote-controls">
+                    <button className="play-btn">▶</button>
+                    <span className="voicenote-duration">5:20</span>
+                    <div className="voicenote-waveform">
+                      <div className="waveform-bars">
+                        {[...Array(12)].map((_, i) => (
+                          <div key={i} className="waveform-bar" style={{ height: `${Math.random() * 10 + 5}px` }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
