@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import Sidebar from '../api/components/Sidebar';
-import AppHeader from '../api/components/AppHeader';
+import Sidebar from '../components/Sidebar';
+import AppHeader from '../components/AppHeader';
 import {
   listGuestsRequest,
   deleteGuestRequest,

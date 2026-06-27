@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Sidebar from "../api/components/Sidebar";
+import Sidebar from "../components/Sidebar";
 import { listMediaRequest, uploadMediaRequest, getTimelineRequest } from "../api/media";
 import "./GalleryPage.css";
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import Sidebar from "../api/components/Sidebar";
+import Sidebar from "../components/Sidebar";
 import { listTeamMembersRequest, inviteTeamMemberRequest, getRoleStatsRequest } from "../api/admin";
 import "./AdminRolesPage.css";
 
