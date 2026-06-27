@@ -81,6 +81,7 @@ model Event {
 
   masterTrackUrl String?     
   voiceNotes     VoiceNote[]
+  feedback       Feedback[]
 
   @@index([hostId])
   @@index([startDate])
@@ -229,9 +230,10 @@ model Media {
   uploaderId String
   uploader   User   @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
 
-  tags     MediaTag[]
-  comments Comment[]
-  likes    Like[]
+  tags       MediaTag[]
+  comments   Comment[]
+  likes      Like[]
+  guestFaces GuestFace[]
 
   @@index([eventId])
   @@index([uploaderId])
