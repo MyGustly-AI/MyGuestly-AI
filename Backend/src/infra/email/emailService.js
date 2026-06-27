@@ -1,113 +1,78 @@
-import { google } from "googleapis";
+import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { logger } from "../loggers/logger.js";
 import env from "../../config/env.js";
 
-// Build an OAuth2 client using your Google Cloud project credentials
-const oAuth2Client = new google.auth.OAuth2(
-  env.GOOGLE_CLIENT_ID,
-  env.GOOGLE_CLIENT_SECRET,
-  "https://developers.google.com/oauthplayground"
-);
+class EmailService {
+    constructor() {
+        this.transporter = nodemailer.createTransport({
+            host: env.EMAIL_HOST,
+            port: Number(env.EMAIL_PORT),
+            secure: Number(env.EMAIL_PORT) === 465,
+            auth: {
+                user: env.EMAIL_SERVICE_USER,
+                pass: env.EMAIL_SERVICE_PASS,
+            },
+        });
 
-oAuth2Client.setCredentials({
-  refresh_token: env.GMAIL_REFRESH_TOKEN,
-});
-
-const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
-
-/**
- * Encode a plain string to base64url format (required by Gmail API)
- */
-function toBase64url(str) {
-  return Buffer.from(str)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-/**
- * Build a raw RFC 2822 MIME message with optional attachments
- */
-function buildRawMessage({ from, to, subject, html, text, attachments = [] }) {
-  const boundary = `----=_Part_${Date.now()}`;
-  const toAddress = Array.isArray(to) ? to.join(", ") : to;
-
-  const lines = [
-    `From: ${from}`,
-    `To: ${toAddress}`,
-    `Subject: ${subject}`,
-    "MIME-Version: 1.0",
-  ];
-
-  if (attachments.length === 0) {
-    // Simple HTML email, no attachments
-    lines.push("Content-Type: text/html; charset=UTF-8", "", html || text || "");
-  } else {
-    // Multipart email with attachments
-    lines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`, "");
-    lines.push(`--${boundary}`);
-    lines.push("Content-Type: text/html; charset=UTF-8", "", html || text || "");
-
-    for (const att of attachments) {
-      const content = Buffer.isBuffer(att.content)
-        ? att.content.toString("base64")
-        : Buffer.from(att.content).toString("base64");
-
-      lines.push(`--${boundary}`);
-      lines.push(
-        `Content-Type: ${att.contentType || "application/octet-stream"}; name="${att.filename}"`,
-        "Content-Transfer-Encoding: base64",
-        `Content-Disposition: attachment; filename="${att.filename}"`,
-        "",
-        content
-      );
+        if (env.RESEND_ENABLED === "true" && env.RESEND_API_KEY) {
+            this.resend = new Resend(env.RESEND_API_KEY);
+        }
     }
 
-    lines.push(`--${boundary}--`);
-  }
+    async sendMail(payload) {
+        try {
+            const info = await this.transporter.sendMail({
+                from: payload.from || `"${env.SMTP_FROM_NAME || "MyGuestly"}" <${env.EMAIL_SERVICE_USER}>`,
+                to: payload.to,
+                subject: payload.subject,
+                text: payload.text,
+                html: payload.html,
+                attachments: payload.attachments,
+            });
 
-  return toBase64url(lines.join("\r\n"));
-}
+            logger.info("Email sent via SMTP", {
+                messageId: info.messageId,
+                recipient: payload.to,
+            });
 
-class EmailService {
-  /**
-   * Send an email via the Gmail REST API (HTTPS — works on all platforms)
-   * @param {Object} payload
-   * @param {string}  payload.to
-   * @param {string}  payload.subject
-   * @param {string}  [payload.html]
-   * @param {string}  [payload.text]
-   * @param {string}  [payload.from]
-   * @param {Array}   [payload.attachments]
-   */
-  async sendMail(payload) {
-    const from =
-      payload.from ||
-      env.EMAIL_FROM ||
-      `MyGuestly <${env.GMAIL_USER}>`;
+            return info;
+        } catch (error) {
+            if (this.resend) {
+                logger.warn("SMTP failed, falling back to Resend", {
+                    error: error.message,
+                    recipient: payload.to,
+                });
 
-    const raw = buildRawMessage({
-      from,
-      to: payload.to,
-      subject: payload.subject,
-      html: payload.html,
-      text: payload.text,
-      attachments: payload.attachments || [],
-    });
+                const { data, error: resendError } = await this.resend.emails.send({
+                    from: payload.from || env.EMAIL_FROM || `MyGuestly <${env.EMAIL_SERVICE_USER}>`,
+                    to: payload.to,
+                    subject: payload.subject,
+                    text: payload.text,
+                    html: payload.html,
+                    attachments: payload.attachments?.map(a => ({
+                        filename: a.filename,
+                        content: a.content instanceof Buffer ? a.content.toString("base64") : a.content,
+                    })),
+                });
 
-    const response = await gmail.users.messages.send({
-      userId: "me",
-      requestBody: { raw },
-    });
+                if (resendError) throw resendError;
 
-    logger.info("Email sent via Gmail API", {
-      messageId: response.data.id,
-      recipient: payload.to,
-    });
+                logger.info("Email sent via Resend (fallback)", {
+                    emailId: data?.id,
+                    recipient: payload.to,
+                });
 
-    return response.data;
-  }
+                return data;
+            }
+
+            logger.error("Failed to send email", {
+                error: error.message,
+                recipient: payload.to,
+            });
+            throw error;
+        }
+    }
 }
 
 export default new EmailService();
