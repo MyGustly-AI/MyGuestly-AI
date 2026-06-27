@@ -2,12 +2,11 @@
 import React from 'react';
 import { useMobileMenu } from '../hooks/useMobileMenu';
 
-export function Sidebar() {
+export function Sidebar() {  // Named export – used with { Sidebar }
   const { isMobile, menuOpen, setMenuOpen } = useMobileMenu();
 
   return (
     <>
-      {/* Mobile Hamburger Button */}
       {isMobile && (
         <button 
           onClick={() => setMenuOpen(!menuOpen)}
@@ -15,7 +14,7 @@ export function Sidebar() {
             position: 'fixed',
             top: '16px',
             left: '16px',
-            zIndex: 1001,  // Higher than everything
+            zIndex: 1001,
             background: 'var(--primary)',
             color: 'white',
             padding: '12px 14px',
@@ -24,17 +23,11 @@ export function Sidebar() {
             border: 'none',
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(75,0,130,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
           }}
-          aria-label="Toggle menu"
         >
           {menuOpen ? '✕' : '☰'}
         </button>
       )}
-
-      {/* Sidebar */}
       <aside style={{
         position: 'fixed',
         top: 0,
@@ -60,7 +53,6 @@ export function Sidebar() {
         }}>
           MyGuestly AI
         </div>
-
         <nav>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             <NavItem icon="📊" label="Dashboard" href="/host/dashboard" />
@@ -71,7 +63,6 @@ export function Sidebar() {
             <NavItem icon="⚙️" label="Settings" href="/settings" />
           </ul>
         </nav>
-
         <div style={{
           position: 'absolute',
           bottom: '24px',
@@ -96,17 +87,12 @@ export function Sidebar() {
               color: 'var(--text-muted)',
               cursor: 'pointer',
               fontSize: '14px',
-              transition: 'background 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--light-bg)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
             🚪 Logout
           </button>
         </div>
       </aside>
-
-      {/* Overlay for mobile */}
       {isMobile && menuOpen && (
         <div 
           onClick={() => setMenuOpen(false)}
@@ -141,7 +127,6 @@ function NavItem({ icon, label, href }) {
           fontSize: '14px',
           fontWeight: '500',
           transition: 'all 0.2s',
-          cursor: 'pointer'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'var(--light-bg)';
@@ -157,4 +142,4 @@ function NavItem({ icon, label, href }) {
       </a>
     </li>
   );
-            }
+      }
