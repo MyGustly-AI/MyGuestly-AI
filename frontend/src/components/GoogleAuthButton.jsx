@@ -1,18 +1,24 @@
 // src/components/GoogleAuthButton.jsx
 import React from 'react';
+import { useGoogleAuth } from '../hooks/useGoogleAuth';
 
 export default function GoogleAuthButton({ disabled }) {
-  const handleGoogleLogin = () => {
-    const apiUrl = process.env.REACT_APP_API_URL || 'https://myguestly-ai.onrender.com/api';
-    window.location.href = `${apiUrl}/auth/google`;
+  const { isReady, signInWithGoogle } = useGoogleAuth();
+
+  const handleClick = () => {
+    if (!isReady) {
+      alert('Google Sign-In is loading. Please try again.');
+      return;
+    }
+    signInWithGoogle();
   };
 
   return (
     <button
       type="button"
       className="social-btn google-btn"
-      onClick={handleGoogleLogin}
-      disabled={disabled}
+      onClick={handleClick}
+      disabled={disabled || !isReady}
       style={{
         display: 'flex',
         alignItems: 'center',
