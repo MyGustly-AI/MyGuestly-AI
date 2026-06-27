@@ -49,6 +49,8 @@ const envSchema = z.object({
   // Optional
   EMAIL_FROM: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  RESEND_ENABLED: z.enum(["true", "false"]).default("false"),
+  SMTP_FROM_NAME: z.string().default("MyGuestly"),
 });
 
 const parsed = envSchema.safeParse(process.env);

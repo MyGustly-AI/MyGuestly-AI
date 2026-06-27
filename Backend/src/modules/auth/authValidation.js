@@ -54,8 +54,3 @@ export const resetPasswordSchema = z.object({
         .string()
         .min(8),
 });
-
-// Safe validation schema for Google OAuth login
-export const googleAuthSchema = z.object({
-    idToken: z.string().min(1),
-});

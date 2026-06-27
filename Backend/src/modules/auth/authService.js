@@ -88,9 +88,8 @@ export const registerUser = async (payload) => {
         60 * 60 * 24 * 7
     );
 
-    const { password: _, ...userWithoutPassword } = user;
     return {
-        user: userWithoutPassword,
+        user,
         accessToken,
         refreshToken,
     };

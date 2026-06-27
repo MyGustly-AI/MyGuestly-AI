@@ -4,17 +4,15 @@ WORKDIR /app
 
 RUN apk add --no-cache bash openssl libc6-compat
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-RUN chown appuser:appgroup /app
-
-USER appuser
-
-COPY --chown=appuser:appgroup package*.json ./
+COPY package*.json ./
 RUN npm ci
 
-COPY --chown=appuser:appgroup . .
+COPY . .
 
 RUN npx prisma generate
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
 
 CMD ["node", "src/infra/queues/workers/emailWorker.js"]

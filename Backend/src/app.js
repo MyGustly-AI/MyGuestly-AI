@@ -8,8 +8,6 @@ import { errorLogger } from "./infra/loggers/errorLogger.js";
 import { apiLimiter } from "./middlewares/rateLimitMiddleware.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 import { notFoundHandler } from "./middlewares/notFoundMiddleware.js";
-import { metricsMiddleware, metricsHandler } from "./infra/metrics/index.js";
-import { deepHealthCheck } from "./infra/health/index.js";
 
 
 
@@ -37,15 +35,6 @@ app.get("/api/v1/health", (req, res) => {
     status: "OK",
   });
 });
-
-app.get("/api/v1/health/deep", async (req, res) => {
-  const result = await deepHealthCheck();
-  const httpStatus = result.status === "ok" ? 200 : 503;
-  res.status(httpStatus).json(result);
-});
-
-app.get("/api/v1/metrics", metricsHandler);
-app.use(metricsMiddleware);
 
 app.use("/api/v1", routes); // Main API routes
 app.use(notFoundHandler); // Middleware to handle 404 Not Found errors for undefined routes

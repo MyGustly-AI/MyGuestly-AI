@@ -1,6 +1,6 @@
 import { Server } from "socket.io";
 import env from "../config/env.js";
-import { logger } from "./logs/logger.js";
+import { logger } from "./loggers/logger.js";
 
 let io;
 

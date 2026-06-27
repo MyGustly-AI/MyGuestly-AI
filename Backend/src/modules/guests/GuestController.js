@@ -8,7 +8,7 @@ import QRCode from "qrcode";
 import env from "../../config/env.js";
 import { logger } from "../../infra/loggers/logger.js";
 
-const BASE_URL = env.APP_CLIENT_URL;
+const BASE_URL = env.APP_URL;
 
 class GuestController extends BaseController {
   constructor() {
@@ -65,7 +65,7 @@ class GuestController extends BaseController {
       location: event.location,
       token: invitationRecord.token,
       invitationLink: `${BASE_URL}/rsvp/${event.eventCode}/${invitationRecord.token}`,
-      rsvpStatus: invitationRecord.status,
+      rsvpStatus: guest.rsvpStatus,
     };
 
     // Generate QR image for the invitation token (data URL -> base64)
@@ -85,7 +85,7 @@ class GuestController extends BaseController {
     if (guest.email) {
       try {
         const job = await emailQueue.add(
-          "send_invitation",
+          "invitation",
           {
             guest,
             event,
@@ -140,59 +140,40 @@ class GuestController extends BaseController {
       );
     }
 
+    // Ensure bulk payloads map `name` -> `fullName` for DB compatibility
     const normalized = guests.map((g) => ({
-      fullName: g.fullName,
+      fullName: g.fullName || g.name,
       email: g.email,
       phone: g.phone,
     }));
 
-    await this.guestService.bulkInviteGuests(eventId, normalized);
-
-    // Find the created guests and create invitation records for each
-    const createdGuests = await prisma.guest.findMany({
-      where: { eventId, createdAt: { gte: new Date(Date.now() - 5000) } },
-    });
-
-    const mailResults = [];
-    for (const g of createdGuests) {
-      const invitationRecord = await this.guestService.getOrCreateInvitation(
-        eventId,
-        g.id,
-      );
-
-      // Generate QR for the invitation token
-      let qrBase64 = null;
-      try {
-        const qrDataUrl = await QRCode.toDataURL(invitationRecord.token, {
-          errorCorrectionLevel: "H",
-          width: 300,
-        });
-        qrBase64 = qrDataUrl.split(",")[1];
-      } catch (err) {
-        console.error("Failed to generate QR code image:", err?.message || err);
-      }
-
-      const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}/${invitationRecord.token}`;
-
-      if (g.email) {
+    const result = await this.guestService.bulkInviteGuests(
+      eventId,
+      normalized,
+    );
+    // Try sending emails for guests that have an email address
+    try {
+      const invites = guests
+        .filter((g) => g.email)
+        .map((g) => ({ name: g.name || g.fullName, email: g.email }));
+      for (const g of invites) {
+        // Create a lightweight guest record to generate link
+        // Note: bulkInvite created records already, but we don't have their ids/qr tokens here.
+        // For now, send a simple notification with event details and request they visit the RSVP page.
+        const invitationLink = `${BASE_URL}/rsvp/${event.eventCode}`;
         try {
           await emailQueue.add(
-            "send_invitation",
+            "invitation",
             {
               guest: { fullName: g.fullName, email: g.email },
               event,
               invitationLink,
-              qrImageBase64: qrBase64,
-              invitationId: invitationRecord.id,
-              hostId,
             },
             { attempts: 3, backoff: { type: "exponential", delay: 60000 } },
           );
-          mailResults.push({ guestId: g.id, enqueued: true });
           logger.info("Bulk invitation email job queued", {
             eventId: event.id,
             guestEmail: g.email,
-            invitationId: invitationRecord.id,
           });
         } catch (err) {
           logger.error("Failed to enqueue bulk invitation email", {
@@ -200,14 +181,17 @@ class GuestController extends BaseController {
             guestEmail: g.email,
             error: err?.message || err,
           });
+          console.error(
+            "Failed to enqueue bulk invitation email:",
+            err?.message || err,
+          );
         }
       }
+    } catch (err) {
+      console.error("Bulk invitation email(s) failed:", err?.message || err);
     }
 
-    this.created(res, "Guest invitations created", {
-      invited: createdGuests.length,
-      mailsQueued: mailResults.length,
-    });
+    this.created(res, "Guest invitations created", result);
   });
 
   updateRsvp = this.asyncHandler(async (req, res) => {
