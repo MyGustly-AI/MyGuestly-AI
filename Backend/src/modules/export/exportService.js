@@ -1,8 +1,8 @@
 function escapeCsv(val) {
   if (val == null) return "";
   const s = String(val);
-  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-    return `"${s.replace(/"/g, '""')}"`;
+  if (s.includes(",") || s.includes("\"") || s.includes("\n")) {
+    return `"${s.replace(/"/g, "\"\"")}"`;
   }
   return s;
 }

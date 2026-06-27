@@ -2,13 +2,19 @@ import { z } from "zod";
 
 // Safe validation schema for user registration input
 export const registerSchema = z.object({
-    fullName: z.string().min(3).max(100),
-    email: z.email(),
-    password: z
-        .string()
-        .min(8)
-        .max(64),
-    phone: z.string().optional(),
+    fullName: z.string().min(3).max(100).optional(),
+    name: z.string().min(3).max(100).optional(),
+    email: z.string().email(),
+    password: z.string().min(8).max(64),
+    phone: z.string().nullable().optional(),
+}).refine(data => data.fullName || data.name, {
+    message: "Either fullName or name must be provided",
+    path: ["fullName"]
+}).transform(data => {
+    return {
+        ...data,
+        fullName: data.fullName || data.name,
+    };
 });
 
 // Safe validation schema for user login input
@@ -25,7 +31,7 @@ export const updateProfileSchema = z.object({
         .max(100)
         .optional(),
 
-        phone: z.string().optional(),
+        phone: z.string().nullable().optional(),
 
         avatarUrl:
         z.string().url().optional(),
@@ -57,5 +63,13 @@ export const resetPasswordSchema = z.object({
 
 // Safe validation schema for Google OAuth login
 export const googleAuthSchema = z.object({
-    idToken: z.string().min(1),
-});
+    idToken: z.string().min(1).optional(),
+    credential: z.string().min(1).optional(),
+    token: z.string().min(1).optional(),
+}).refine(data => data.idToken || data.credential || data.token, {
+    message: "Google token must be provided",
+    path: ["idToken"]
+}).transform(data => ({
+    ...data,
+    idToken: data.idToken || data.credential || data.token
+}));

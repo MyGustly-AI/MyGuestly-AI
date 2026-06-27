@@ -1,3 +1,4 @@
+import "dotenv/config"; // Must be the very first line
 import express from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -11,10 +12,7 @@ import { notFoundHandler } from "./middlewares/notFoundMiddleware.js";
 import { metricsMiddleware, metricsHandler } from "./infra/metrics/index.js";
 import { deepHealthCheck } from "./infra/health/index.js";
 
-
-
 const app = express(); // Init express ap
-
 
 app.use(cookieParser()); // Middleware to parse refresh token from cookies for authentication
 app.use(helmet()); // Middleware to set security-related HTTP headers for protection against common vulnerabilities
@@ -30,6 +28,7 @@ app.use(
 
 app.use(requestLogger); // Middleware to log incoming requests for debugging and monitoring purposes
 app.use(apiLimiter); // Middleware to limit the number of requests from a single IP address
+app.use(errorLogger); // Middleware to log errors that occur during request processing for debugging and monitoring purposes
 
 // Health check endpoint
 app.get("/api/v1/health", (req, res) => {

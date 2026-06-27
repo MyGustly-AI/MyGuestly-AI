@@ -767,8 +767,12 @@ Use `Authorization: Bearer <ACCESS_TOKEN>` for protected endpoints. Replace `:ev
   - POST `/api/v1/events/:eventId/media/:mediaId/comments` — add comment
   - POST `/api/v1/events/:eventId/media/:mediaId/likes` — toggle like
   - POST `/api/v1/events/:eventId/media/:mediaId/voice-note` — attach voice note
-  - POST `/api/v1/events/:eventId/memories` — create text or voice memory
   - GET `/api/v1/events/:eventId/memories` — fetch memory timeline
+
+- AI Integration
+  - POST `/api/v1/ai/organize` — auto-categorize media descriptions into meaningful moments
+  - GET `/api/v1/ai/events/:eventId/timeline` — auto-generate event timeline from media clusters
+  - POST `/api/v1/ai/events/:eventId/retag` — batch retag all media for an event
 
 - Email & background processing (internal)
   - Background worker listens to the `email` queue (BullMQ) and processes `invitation` jobs by calling Resend or Nodemailer fallback.

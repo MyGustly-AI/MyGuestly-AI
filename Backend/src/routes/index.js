@@ -1,3 +1,4 @@
+import "dotenv/config"; // Must be the very first line
 import { Router } from "express";
 const router = Router();
 

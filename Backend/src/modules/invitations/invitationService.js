@@ -13,10 +13,21 @@ export class InvitationService {
   }
 
   async getInvitation(invitationId) {
-    const invitation = await this.prisma.invitation.findUnique({
-      where: { id: invitationId },
-      include: { guest: true, event: { include: { host: true } } },
-    });
+    let invitation = null;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(invitationId)) {
+      invitation = await this.prisma.invitation.findUnique({
+        where: { id: invitationId },
+        include: { guest: true, event: { include: { host: true } } },
+      });
+
+      if (!invitation) {
+        invitation = await this.prisma.invitation.findUnique({
+          where: { token: invitationId },
+          include: { guest: true, event: { include: { host: true } } },
+        });
+      }
+    }
     if (!invitation) throw AppError.notFound("Invitation not found");
     return this.formatInvitationResponse(invitation);
   }

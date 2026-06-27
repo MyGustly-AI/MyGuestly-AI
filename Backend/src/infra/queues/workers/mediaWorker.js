@@ -63,7 +63,7 @@ async function processMedia({ mediaId }) {
         format: v.format || null,
       }));
 
-      const existingMeta = typeof media.metadata === 'object' && media.metadata !== null ? media.metadata : {};
+      const existingMeta = typeof media.metadata === "object" && media.metadata !== null ? media.metadata : {};
       await prisma.media.update({
         where: { id: mediaId },
         data: {

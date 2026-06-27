@@ -1422,6 +1422,102 @@ GET /api/v1/events/:eventId/memories?page=1&limit=10&type=TEXT
 
 ---
 
+# 📁 COLLECTION 7 — AI Integration
+
+---
+
+## 7.1 Organize Media Moments
+
+**`POST /ai/organize`**
+
+Uses AI to categorize media descriptions into event moments (e.g., Ceremony, Reception, Dance).
+
+**Auth required:** ✅ Yes
+
+**Body:**
+```json
+{
+  "mediaItems": [
+    "A photo of the bride and groom at the altar",
+    "People dancing energetically under neon lights"
+  ]
+}
+```
+
+**Success Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Media organized successfully",
+  "data": {
+    "Ceremony": [
+      "A photo of the bride and groom at the altar"
+    ],
+    "Dance": [
+      "People dancing energetically under neon lights"
+    ]
+  }
+}
+```
+
+---
+
+## 7.2 Get AI Event Timeline
+
+**`GET /ai/events/:eventId/timeline`**
+
+Generates a chronological timeline of the event by clustering media items based on time gaps. Results are cached in Redis.
+
+**Auth required:** Optional
+
+**Success Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Timeline retrieved",
+  "data": [
+    {
+      "moment": "Moment 1",
+      "time": "2026-06-15T14:00:00.000Z",
+      "items": [
+        {
+          "id": "uuid",
+          "url": "https://...",
+          "mediaType": "IMAGE",
+          "tags": ["wedding", "altar"],
+          "createdAt": "2026-06-15T14:00:00.000Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 7.3 Retag Event Media
+
+**`POST /ai/events/:eventId/retag`**
+
+Enqueues background worker jobs to re-run AI metadata extraction and auto-tagging on all media items in an event.
+
+**Auth required:** ✅ Yes (HOST)
+
+**Success Response `202`:**
+```json
+{
+  "success": true,
+  "message": "Retagging enqueued",
+  "data": {
+    "enqueued": 45
+  }
+}
+```
+
+---
+
+---
+
 # 📡 Real-Time Events (Socket.io)
 
 The backend uses Socket.io for real-time updates. Connect to the root of the API server (not `/api/v1`).

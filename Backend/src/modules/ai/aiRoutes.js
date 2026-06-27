@@ -17,4 +17,6 @@ router.post(
   aiController.retag,
 );
 
+router.post("/organize", aiController.categorizeMedia);
+
 export default router;
