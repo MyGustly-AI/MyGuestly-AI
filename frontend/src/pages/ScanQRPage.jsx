@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import AppHeader from '../components/AppHeader';
-import { listGuestsRequest, checkInGuestRequest } from '../api/guests';
+import { checkinGuestRequest, listGuestsRequest } from '../api/guests';
 import './ScanQRPage.css';
+
+export const checkInGuestRequest = checkinGuestRequest;
 
 const SCANNER_ELEMENT_ID = 'qr-scanner-viewport';
 

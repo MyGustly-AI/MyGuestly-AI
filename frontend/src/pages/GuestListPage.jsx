@@ -1,157 +1,13 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
-import AppHeader from '../components/AppHeader';
-import { listEventsRequest } from '../api/events';
-import { listGuestsRequest, addGuestRequest, deleteGuestRequest } from '../api/guests';
-import './GuestListPage.css';
-
-export default function GuestListPage() {
-  const [events, setEvents] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [guests, setGuests] = useState([]);
-  
-  // Loading states
-  const [eventsLoading, setEventsLoading] = useState(true);
-  const [guestsLoading, setGuestsLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Filter & Search states
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-
-  // Modal form states
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [addError, setAddError] = useState(null);
-
-  // Fetch all events on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await listEventsRequest();
-        const eventList = data?.data || data || [];
-        setEvents(eventList);
-        if (eventList.length > 0) {
-          setSelectedEventId(eventList[0].id);
-        }
-      } catch (err) {
-        setError(err.message || 'Failed to retrieve events.');
-      } finally {
-        setEventsLoading(false);
-      }
-    })();
-  }, []);
-
-  // Fetch guests whenever selectedEventId or statusFilter changes
-  useEffect(() => {
-    if (!selectedEventId) return;
-
-    (async () => {
-      setGuestsLoading(true);
-      setError(null);
-      try {
-        const query = {};
-        if (statusFilter !== 'ALL') {
-          query.status = statusFilter; // matches backend status expectation
-        }
-        const data = await listGuestsRequest(selectedEventId, query);
-        setGuests(data?.data || data || []);
-      } catch (err) {
-        setError(err.message || 'Failed to retrieve guest list.');
-      } finally {
-        setGuestsLoading(false);
-      }
-    })();
-  }, [selectedEventId, statusFilter]);
-
-  // Handle Add Guest Submission
-  const handleAddGuest = async (e) => {
-    e.preventDefault();
-    if (!fullName.trim()) {
-      setAddError('Full Name is required.');
-      return;
-    }
-    if (!email.trim() && !phone.trim()) {
-      setAddError('Please provide either an Email or Phone number.');
-      return;
-    }
-
-    setAddError(null);
-    setActionLoading(true);
-    try {
-      const payload = { fullName };
-      if (email.trim()) payload.email = email.trim();
-      if (phone.trim()) payload.phone = phone.trim();
-
-      const newGuestResponse = await addGuestRequest(selectedEventId, payload);
-      const addedGuest = newGuestResponse?.guest || newGuestResponse;
-
-      // Optimistically prepend the guest
-      setGuests((prev) => [addedGuest, ...prev]);
-
-      // Reset form & close modal
-      setFullName('');
-      setEmail('');
-      setPhone('');
-      setShowAddModal(false);
-    } catch (err) {
-      setAddError(err.message || 'Failed to add guest.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Handle Delete Guest
-  const handleDeleteGuest = async (guestId) => {
-    if (!window.confirm('Are you sure you want to remove this guest?')) return;
-    
-    setActionLoading(true);
-    try {
-      await deleteGuestRequest(selectedEventId, guestId);
-      setGuests((prev) => prev.filter((g) => g.id !== guestId));
-    } catch (err) {
-      alert(err.message || 'Failed to delete guest.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Count summaries dynamically based on the current guests list
-  const getCounts = () => {
-    const total = guests.length;
-    const attending = guests.filter((g) => g.invitation?.status === 'ACCEPTED').length;
-    const pending = guests.filter((g) => !g.invitation || g.invitation.status === 'PENDING').length;
-    const declined = guests.filter((g) => g.invitation?.status === 'DECLINED').length;
-
-    return { total, attending, pending, declined };
-  };
-
-  const counts = getCounts();
-
-  const selectedEvent = events.find((e) => e.id === selectedEventId);
-
-  // Filter guests locally by search string
-  const filteredGuests = guests.filter((g) => {
-    const matchesSearch =
-      !search ||
-      g.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      (g.email && g.email.toLowerCase().includes(search.toLowerCase())) ||
-      (g.phone && g.phone.includes(search));
-    return matchesSearch;
-  });
-=======
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import AppHeader from '../components/AppHeader';
+import { listEventsRequest } from '../api/events';
 import {
   listGuestsRequest,
+  addGuestRequest,
   deleteGuestRequest,
-  rsvpRequest,
+  updateGuestRsvpRequest,
 } from '../api/guests';
 import './GuestListPage.css';
 
@@ -162,80 +18,80 @@ const RSVP_OPTIONS = [
 ];
 
 function normalizeStatus(status) {
-  if (status === 'RSVP_CONFIRMED' || status === 'ATTENDING') return 'RSVP_CONFIRMED';
+  if (status === 'RSVP_CONFIRMED' || status === 'ATTENDING' || status === 'ACCEPTED') return 'RSVP_CONFIRMED';
   if (status === 'RSVP_DECLINED' || status === 'DECLINED') return 'RSVP_DECLINED';
   return 'PENDING';
 }
 
 export default function GuestListPage() {
   const location = useLocation();
-  const eventId = location.state?.eventId;
+  const locationEventId = location.state?.eventId;
 
+  // State
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState(locationEventId || '');
   const [guests, setGuests] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [guestsLoading, setGuestsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [actionError, setActionError] = useState(null);
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [updatingId, setUpdatingId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
-  const [actionError, setActionError] = useState(null);
 
-  const loadGuests = async () => {
-    if (!eventId) return;
-    setLoading(true);
-    try {
-      const result = await listGuestsRequest(eventId, { limit: 100 });
-      const list = result?.data ?? result?.guests ?? result ?? [];
-      setGuests(Array.isArray(list) ? list : []);
-    } catch (err) {
-      setError(err.message || 'Could not load guests.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [addError, setAddError] = useState(null);
+  const [addLoading, setAddLoading] = useState(false);
 
+  // Fetch events on mount
   useEffect(() => {
-    if (!eventId) {
-      setLoading(false);
-      setError('No event selected.');
+    (async () => {
+      try {
+        const data = await listEventsRequest({ limit: 100 });
+        const eventList = data?.data || data || [];
+        setEvents(eventList);
+        if (eventList.length > 0 && !selectedEventId) {
+          setSelectedEventId(eventList[0].id);
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to retrieve events.');
+      } finally {
+        setEventsLoading(false);
+      }
+    })();
+  }, []);
+
+  // Fetch guests when event changes
+  useEffect(() => {
+    if (!selectedEventId) {
+      setGuests([]);
       return;
     }
-    loadGuests();
-  }, [eventId]);
 
-  const handleRsvpChange = async (guestId, newStatus) => {
-    if (!eventId) return;
-    setActionError(null);
-    setUpdatingId(guestId);
-    const prevGuests = guests;
-    setGuests((gs) => gs.map((g) => (g.id === guestId ? { ...g, status: newStatus } : g)));
-    try {
-      await rsvpRequest(eventId, guestId, { status: newStatus });
-      await loadGuests();
-    } catch (err) {
-      setGuests(prevGuests);
-      setActionError(err.message || 'Could not update RSVP status.');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+    (async () => {
+      setGuestsLoading(true);
+      setError(null);
+      try {
+        const query = statusFilter !== 'ALL' ? { status: statusFilter } : {};
+        const data = await listGuestsRequest(selectedEventId, query);
+        setGuests(data?.data || data?.guests || data || []);
+      } catch (err) {
+        setError(err.message || 'Failed to retrieve guest list.');
+      } finally {
+        setGuestsLoading(false);
+      }
+    })();
+  }, [selectedEventId, statusFilter]);
 
-  const handleRemoveGuest = async (guestId) => {
-    if (!eventId) return;
-    setActionError(null);
-    setRemovingId(guestId);
-    const prevGuests = guests;
-    setGuests((gs) => gs.filter((g) => g.id !== guestId));
-    try {
-      await deleteGuestRequest(eventId, guestId);
-    } catch (err) {
-      setGuests(prevGuests);
-      setActionError(err.message || 'Could not remove guest.');
-    } finally {
-      setRemovingId(null);
-    }
-  };
+  const selectedEvent = events.find((e) => e.id === selectedEventId);
 
+  // Filtered & memoized guests
   const filteredGuests = useMemo(() => {
     return guests.filter((g) => {
       const name = g.fullName || g.name || '';
@@ -249,11 +105,11 @@ export default function GuestListPage() {
         status.toLowerCase().includes(search.toLowerCase());
 
       const matchesFilter = statusFilter === 'ALL' || status === statusFilter;
-
       return matchesSearch && matchesFilter;
     });
   }, [guests, search, statusFilter]);
 
+  // Summary stats
   const summary = useMemo(() => {
     const total = guests.length;
     const attending = guests.filter((g) => normalizeStatus(g.status) === 'RSVP_CONFIRMED').length;
@@ -266,7 +122,74 @@ export default function GuestListPage() {
       { label: 'Declined', value: declined, color: 'var(--danger)' },
     ];
   }, [guests]);
->>>>>>> in
+
+  const handleRsvpChange = async (guestId, newStatus) => {
+    setActionError(null);
+    setUpdatingId(guestId);
+    const prevGuests = guests;
+    setGuests((gs) => gs.map((g) => (g.id === guestId ? { ...g, status: newStatus } : g)));
+    try {
+      await updateGuestRsvpRequest(selectedEventId, guestId, { status: newStatus });
+    } catch (err) {
+      setGuests(prevGuests);
+      setActionError(err.message || 'Could not update RSVP status.');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Handle remove guest
+  const handleRemoveGuest = async (guestId) => {
+    if (!window.confirm('Remove this guest?')) return;
+    
+    setActionError(null);
+    setRemovingId(guestId);
+    const prevGuests = guests;
+    setGuests((gs) => gs.filter((g) => g.id !== guestId));
+    try {
+      await deleteGuestRequest(selectedEventId, guestId);
+    } catch (err) {
+      setGuests(prevGuests);
+      setActionError(err.message || 'Could not remove guest.');
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  // Handle add guest
+  const handleAddGuest = async (e) => {
+    e.preventDefault();
+    if (!fullName.trim()) {
+      setAddError('Full Name is required.');
+      return;
+    }
+    if (!email.trim() && !phone.trim()) {
+      setAddError('Please provide either an Email or Phone number.');
+      return;
+    }
+
+    setAddError(null);
+    setAddLoading(true);
+    try {
+      const payload = { fullName };
+      if (email.trim()) payload.email = email.trim();
+      if (phone.trim()) payload.phone = phone.trim();
+
+      const newGuestResponse = await addGuestRequest(selectedEventId, payload);
+      const addedGuest = newGuestResponse?.guest || newGuestResponse;
+
+      setGuests((prev) => [addedGuest, ...prev]);
+
+      setFullName('');
+      setEmail('');
+      setPhone('');
+      setShowAddModal(false);
+    } catch (err) {
+      setAddError(err.message || 'Failed to add guest.');
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   return (
     <div className="app-layout">
@@ -286,21 +209,16 @@ export default function GuestListPage() {
             <div>
               <h1 className="page-heading">Guest List Management</h1>
               <p className="page-sub" style={{ marginTop: 4 }}>
-<<<<<<< HEAD
                 {selectedEvent ? (
                   <>
                     <span className="badge badge-purple" style={{ fontSize: 11, marginRight: 6 }}>
                       {selectedEvent.eventCategory || 'Event'}
                     </span>
-                    {selectedEvent.title} • {counts.total} Guests Listed
+                    {selectedEvent.title} • {guests.length} Guests Listed
                   </>
                 ) : (
                   'Select an event to manage attendees.'
                 )}
-=======
-                <span className="badge badge-purple" style={{ fontSize: 11, marginRight: 6 }}>Premium Host</span>
-                {guests.length} Guests Total
->>>>>>> in
               </p>
             </div>
             <div className="guestlist-top-actions">
@@ -311,6 +229,7 @@ export default function GuestListPage() {
                   value={selectedEventId}
                   onChange={(e) => setSelectedEventId(e.target.value)}
                 >
+                  <option value="">Select an event...</option>
                   {events.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.title}
@@ -334,44 +253,18 @@ export default function GuestListPage() {
           </div>
 
           {error && <div className="auth-error" style={{ marginBottom: 16 }}>{error}</div>}
-<<<<<<< HEAD
-
-          {/* Summary Cards */}
-          <div className="summary-row">
-            <div className="summary-card">
-              <div className="summary-value" style={{ color: 'var(--primary)' }}>
-                {eventsLoading || guestsLoading ? '...' : counts.total}
-=======
           {actionError && <div className="auth-error" style={{ marginBottom: 16 }}>{actionError}</div>}
 
           {/* Summary Cards */}
           <div className="summary-row">
             {summary.map((c, i) => (
               <div key={i} className="summary-card">
-                <div className="summary-value" style={{ color: c.color }}>{c.value}</div>
+                <div className="summary-value" style={{ color: c.color }}>
+                  {guestsLoading ? '...' : c.value}
+                </div>
                 <div className="summary-label">{c.label}</div>
->>>>>>> in
               </div>
-              <div className="summary-label">Total Guests</div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-value" style={{ color: 'var(--success)' }}>
-                {eventsLoading || guestsLoading ? '...' : counts.attending}
-              </div>
-              <div className="summary-label">Attending</div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-value" style={{ color: 'var(--warning)' }}>
-                {eventsLoading || guestsLoading ? '...' : counts.pending}
-              </div>
-              <div className="summary-label">Pending</div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-value" style={{ color: 'var(--danger)' }}>
-                {eventsLoading || guestsLoading ? '...' : counts.declined}
-              </div>
-              <div className="summary-label">Declined</div>
-            </div>
+            ))}
           </div>
 
           {/* Search + Filter */}
@@ -391,29 +284,14 @@ export default function GuestListPage() {
             </div>
             <select
               className="input-field"
-<<<<<<< HEAD
-              style={{ width: 180 }}
-=======
               style={{ width: 160 }}
->>>>>>> in
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="ALL">All RSVP Status</option>
-<<<<<<< HEAD
-              <option value="CONFIRMED">Attending</option>
-              <option value="PENDING">Pending</option>
-              <option value="DECLINED">Declined</option>
-=======
               <option value="RSVP_CONFIRMED">Attending</option>
               <option value="PENDING">Pending</option>
               <option value="RSVP_DECLINED">Declined</option>
-            </select>
-            <select className="input-field" style={{ width: 140 }}>
-              <option>Filter Party</option>
-              <option>VIP</option>
-              <option>General</option>
->>>>>>> in
             </select>
           </div>
 
@@ -428,130 +306,46 @@ export default function GuestListPage() {
                   <th>Guest Name</th>
                   <th>Contact Info</th>
                   <th>RSVP Status</th>
-<<<<<<< HEAD
-                  <th>Invitation Link</th>
                   <th style={{ width: '100px' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {guestsLoading ? (
+                {guestsLoading && (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                    <td colSpan={5} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
                       Loading guest list...
                     </td>
                   </tr>
-                ) : filteredGuests.length === 0 ? (
+                )}
+
+                {!guestsLoading && filteredGuests.length === 0 && (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                    <td colSpan={5} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
                       {search || statusFilter !== 'ALL' ? 'No guests match filters.' : 'No guests invited yet.'}
                     </td>
                   </tr>
-                ) : (
-                  filteredGuests.map((g) => {
-                    const status = g.invitation?.status || 'PENDING';
-                    const init = g.fullName ? g.fullName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : 'G';
-                    return (
-                      <tr key={g.id}>
-                        <td>
-                          <input type="checkbox" />
-                        </td>
-                        <td>
-                          <div className="guest-cell">
-                            <div className="guest-avatar-sm">{init}</div>
-                            <div>
-                              <div className="guest-name">{g.fullName}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="guest-email">{g.email || g.phone || '—'}</td>
-                        <td>
-                          <span
-                            className={`badge ${
-                              status === 'ACCEPTED' || status === 'CHECKED_IN'
-                                ? 'badge-success'
-                                : status === 'PENDING'
-                                ? 'badge-warning'
-                                : 'badge-declined'
-                            }`}
-                          >
-                            {status === 'ACCEPTED' ? 'ATTENDING' : status}
-                          </span>
-                        </td>
-                        <td>
-                          {g.invitation?.token ? (
-                            <a
-                              href={`/rsvp/${selectedEvent?.eventCode}/${g.invitation.token}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ color: 'var(--primary)', textDecoration: 'underline' }}
-                            >
-                              RSVP Link
-                            </a>
-                          ) : (
-                            <span style={{ color: 'var(--text-muted)' }}>None</span>
-                          )}
-                        </td>
-                        <td>
-                          <div className="guest-actions">
-                            <button
-                              className="table-action-btn"
-                              title="Remove"
-                              onClick={() => handleDeleteGuest(g.id)}
-                              disabled={actionLoading}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="3,6 5,6 21,6" />
-                                <path d="m19,6-.867,13.142A2,2,0,0,1,16.138,21H7.862a2,2,0,0,1-1.995-1.858L5,6m5,0V4a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1v2" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-            <div className="table-footer">
-              <span>
-                Showing {filteredGuests.length} of {guests.length} guests
-              </span>
-=======
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && (
-                  <tr>
-                    <td colSpan={5} style={{ padding: 16, color: 'var(--text-muted)' }}>Loading guests...</td>
-                  </tr>
                 )}
 
-                {!loading && filteredGuests.length === 0 && (
-                  <tr>
-                    <td colSpan={5} style={{ padding: 16, color: 'var(--text-muted)' }}>No guests found.</td>
-                  </tr>
-                )}
-
-                {!loading && filteredGuests.map((g) => {
+                {!guestsLoading && filteredGuests.map((g) => {
                   const name = g.fullName || g.name || 'Unknown';
-                  const email = g.email || g.phone || g.contact || '—';
+                  const contactInfo = g.email || g.phone || '—';
                   const status = normalizeStatus(g.status);
                   const avatar = name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
                   return (
                     <tr key={g.id}>
-                      <td><input type="checkbox" /></td>
+                      <td>
+                        <input type="checkbox" />
+                      </td>
                       <td>
                         <div className="guest-cell">
                           <div className="guest-avatar-sm">{avatar}</div>
                           <div>
                             <div className="guest-name">{name}</div>
-                            <div className="guest-email">{email}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="guest-email">{email}</td>
+                      <td className="guest-email">{contactInfo}</td>
                       <td>
                         <select
                           className={`badge badge-select ${
@@ -569,16 +363,16 @@ export default function GuestListPage() {
                       </td>
                       <td>
                         <div className="guest-actions">
-                          <button className="table-action-btn" title="Edit">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          </button>
                           <button
                             className="table-action-btn"
                             title="Remove"
                             disabled={removingId === g.id}
                             onClick={() => handleRemoveGuest(g.id)}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="m19,6-.867,13.142A2,2,0,0,1,16.138,21H7.862a2,2,0,0,1-1.995-1.858L5,6m5,0V4a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1v2"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3,6 5,6 21,6" />
+                              <path d="m19,6-.867,13.142A2,2,0,0,1,16.138,21H7.862a2,2,0,0,1-1.995-1.858L5,6m5,0V4a1,1,0,0,1,1-1h2a1,1,0,0,1,1,1v2" />
+                            </svg>
                           </button>
                         </div>
                       </td>
@@ -588,8 +382,9 @@ export default function GuestListPage() {
               </tbody>
             </table>
             <div className="table-footer">
-              <span>Showing {filteredGuests.length} of {guests.length} guests</span>
->>>>>>> in
+              <span>
+                Showing {filteredGuests.length} of {guests.length} guests
+              </span>
             </div>
           </div>
 
@@ -620,10 +415,10 @@ export default function GuestListPage() {
                 <input
                   className="input-field"
                   type="text"
-                  placeholder="e.g. Adequate S. Johnson"
+                  placeholder="e.g. Adekunle Johnson"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  required
+                  disabled={addLoading}
                 />
               </div>
               <div className="form-group" style={{ marginTop: 12 }}>
@@ -634,6 +429,7 @@ export default function GuestListPage() {
                   placeholder="email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={addLoading}
                 />
               </div>
               <div className="form-group" style={{ marginTop: 12 }}>
@@ -644,6 +440,7 @@ export default function GuestListPage() {
                   placeholder="e.g. +2348032454760"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  disabled={addLoading}
                 />
               </div>
 
@@ -654,12 +451,12 @@ export default function GuestListPage() {
                   type="button"
                   className="btn-ghost"
                   onClick={() => setShowAddModal(false)}
-                  disabled={actionLoading}
+                  disabled={addLoading}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" disabled={actionLoading}>
-                  {actionLoading ? 'Inviting...' : 'Add Guest'}
+                <button type="submit" className="btn-primary" disabled={addLoading}>
+                  {addLoading ? 'Adding...' : 'Add Guest'}
                 </button>
               </div>
             </form>

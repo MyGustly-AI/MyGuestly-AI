@@ -1,6 +1,5 @@
-// src/pages/TimelinePage.jsx
 import React, { useState } from 'react';
-import { Sidebar } from '../components/Sidebar';
+import Sidebar from '../components/Sidebar';
 import './TimelinePage.css';
 
 export default function TimelinePage() {
@@ -10,31 +9,31 @@ export default function TimelinePage() {
   const voiceNotes = [
     {
       id: 1,
-      title: "Bridal Morning Reflection",
-      description: "Laughter, joy, and the beginning of a beautiful journey",
-      time: "11:00 AM",
-      duration: "3:45",
+      title: 'Bridal Morning Reflection',
+      description: 'Laughter, joy, and the beginning of a beautiful journey',
+      time: '11:00 AM',
+      duration: '3:45',
       author: "Bride's Sister",
-      isLive: true
+      isLive: true,
     },
     {
       id: 2,
       title: "The Town Crier's Speech",
-      description: "The abridged version of the morning reflection and modern love",
-      time: "12:30 PM",
-      duration: "5:20",
-      author: "Family Elder",
-      isLive: false
+      description: 'The abridged version of the morning reflection and modern love',
+      time: '12:30 PM',
+      duration: '5:20',
+      author: 'Family Elder',
+      isLive: false,
     },
     {
       id: 3,
       title: "Best Man's Toast",
-      description: "Heartfelt words from the best man",
-      time: "2:15 PM",
-      duration: "2:30",
-      author: "Best Man",
-      isLive: false
-    }
+      description: 'Heartfelt words from the best man',
+      time: '2:15 PM',
+      duration: '2:30',
+      author: 'Best Man',
+      isLive: false,
+    },
   ];
 
   const toggleVoiceNote = (id) => {
@@ -53,19 +52,19 @@ export default function TimelinePage() {
             </div>
 
             <div className="timeline-tabs">
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
                 onClick={() => setActiveTab('timeline')}
               >
                 ⏳ AI Timeline
               </button>
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'uploads' ? 'active' : ''}`}
                 onClick={() => setActiveTab('uploads')}
               >
                 📤 Guest Uploads
               </button>
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'voicenotes' ? 'active' : ''}`}
                 onClick={() => setActiveTab('voicenotes')}
               >
@@ -96,7 +95,7 @@ export default function TimelinePage() {
                         </div>
                       </div>
                       <div className="voicenote-controls">
-                        <button 
+                        <button
                           className={`play-btn ${playingVoiceNote === note.id ? 'playing' : ''}`}
                           onClick={() => toggleVoiceNote(note.id)}
                         >
@@ -106,12 +105,12 @@ export default function TimelinePage() {
                         <div className="voicenote-waveform">
                           <div className="waveform-bars">
                             {[...Array(16)].map((_, i) => (
-                              <div 
-                                key={i} 
+                              <div
+                                key={i}
                                 className={`waveform-bar ${playingVoiceNote === note.id ? 'active' : ''}`}
-                                style={{ 
+                                style={{
                                   height: `${Math.random() * 15 + 5}px`,
-                                  animationDelay: `${i * 0.1}s`
+                                  animationDelay: `${i * 0.1}s`,
                                 }}
                               />
                             ))}
@@ -179,4 +178,4 @@ export default function TimelinePage() {
       </div>
     </div>
   );
-        }
+}

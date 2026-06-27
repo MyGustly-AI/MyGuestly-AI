@@ -9,10 +9,6 @@ export async function listGuestsRequest(eventId, { status, page, limit } = {}) {
   return api.get(`/events/${eventId}/guests${query}`);
 }
 
-<<<<<<< HEAD
-export async function addGuestRequest(eventId, guestData) {
-  return api.post(`/events/${eventId}/guests`, guestData);
-=======
 export async function addGuestRequest(eventId, { fullName, email, phone }) {
   return api.post(`/events/${eventId}/guests`, { fullName, email, phone });
 }
@@ -28,16 +24,10 @@ export async function importGuestsRequest(eventId, file) {
 
 export async function updateGuestRequest(eventId, guestId, payload) {
   return api.patch(`/events/${eventId}/guests/${guestId}`, payload);
->>>>>>> in
 }
 
 export async function deleteGuestRequest(eventId, guestId) {
   return api.delete(`/events/${eventId}/guests/${guestId}`);
-}
-
-<<<<<<< HEAD
-export async function updateGuestRsvpRequest(eventId, guestId, status) {
-  return api.put(`/events/${eventId}/guests/${guestId}/rsvp`, { status });
 }
 
 export async function getInvitationRequest(invitationIdOrToken) {
@@ -47,7 +37,7 @@ export async function getInvitationRequest(invitationIdOrToken) {
 export async function submitRsvpRequest(invitationIdOrToken, status) {
   return api.post(`/invitations/${invitationIdOrToken}/rsvp`, { status });
 }
-=======
+
 export async function sendInviteRequest(eventId, guestId) {
   return api.post(`/events/${eventId}/guests/${guestId}/invite`);
 }
@@ -56,16 +46,8 @@ export async function sendAllInvitesRequest(eventId) {
   return api.post(`/events/${eventId}/guests/invite-all`);
 }
 
-export async function rsvpRequest(eventId, guestId, { status }) {
-  return api.patch(`/events/${eventId}/guests/${guestId}/rsvp`, { status });
-}
-
-export async function checkInGuestRequest(eventId, { qrCode }) {
-  return api.post(`/events/${eventId}/checkin`, { qrCode });
-}
 export const updateGuestRsvpRequest = (eventId, guestId, status) =>
   api.patch(`/events/${eventId}/guests/${guestId}/rsvp`, { status });
 
 export const checkinGuestRequest = (eventId, qrCode) =>
   api.post(`/events/${eventId}/checkin`, { qrCode });
->>>>>>> in

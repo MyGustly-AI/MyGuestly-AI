@@ -1,21 +1,12 @@
-// src/components/Sidebar.jsx
-import React from 'react';
-import { useMobileMenu } from '../hooks/useMobileMenu';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Logo from './Logo.jsx';
+import './Sidebar.css';
 
-<<<<<<< HEAD
-export function Sidebar() {  // Named export – used with { Sidebar }
-  const { isMobile, menuOpen, setMenuOpen } = useMobileMenu();
-=======
-// ------------------------------------------------------------------
-// Sidebar
-// Props:
-//   role  - 'host' | 'guest'
-//   user  - { name, plan }
-// ------------------------------------------------------------------
-
-export default function Sidebar({ role = 'host', user = { name: 'Host', plan: 'Host Account' } }) {
+export default function Sidebar({ role = 'host', user = { name: 'Amara', plan: 'Host Account' } }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const hostLinks = [
     { href: '/host/dashboard',   label: 'Dashboard',    icon: <GridIcon /> },
@@ -33,143 +24,171 @@ export default function Sidebar({ role = 'host', user = { name: 'Host', plan: 'H
   ];
 
   const links = role === 'host' ? hostLinks : guestLinks;
->>>>>>> in
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <>
-      {isMobile && (
-        <button 
-          onClick={() => setMenuOpen(!menuOpen)}
-          style={{
-            position: 'fixed',
-            top: '16px',
-            left: '16px',
-            zIndex: 1001,
-            background: 'var(--primary)',
-            color: 'white',
-            padding: '12px 14px',
-            borderRadius: '8px',
-            fontSize: '20px',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(75,0,130,0.3)',
-          }}
-        >
-          {menuOpen ? '✕' : '☰'}
-        </button>
+      {/* Mobile Hamburger Button */}
+      <button
+        className="sidebar-hamburger"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        aria-label="Toggle menu"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={closeMobileMenu} />
       )}
-      <aside style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '260px',
-        height: '100vh',
-        background: 'white',
-        borderRight: '1px solid var(--border)',
-        padding: '24px 16px',
-        transform: isMobile ? (menuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 1000,
-        overflowY: 'auto',
-        boxShadow: isMobile && menuOpen ? '4px 0 24px rgba(0,0,0,0.15)' : 'none'
-      }}>
-        <div style={{
-          padding: '8px 12px',
-          marginBottom: '32px',
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '24px',
-          fontWeight: '700',
-          color: 'var(--primary)'
-        }}>
-          MyGuestly AI
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+        {/* Close Button (Mobile Only) */}
+        <button
+          className="sidebar-close"
+          onClick={closeMobileMenu}
+          aria-label="Close menu"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <Logo />
         </div>
-        <nav>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            <NavItem icon="📊" label="Dashboard" href="/host/dashboard" />
-            <NavItem icon="📅" label="Events" href="/host/home" />
-            <NavItem icon="👥" label="Guests" href="/host/guest-list" />
-            <NavItem icon="📨" label="Invitations" href="/host/invitation" />
-            <NavItem icon="👤" label="Profile" href="/profile" />
-            <NavItem icon="⚙️" label="Settings" href="/settings" />
-          </ul>
+
+        {/* Nav links */}
+        <nav className="sidebar-nav">
+          {links.map((link, i) => {
+            const isActive = location.pathname === link.href;
+            return (
+              <Link
+                key={i}
+                to={link.href}
+                className={`sidebar-link${isActive ? ' active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                <span className="sidebar-icon">{link.icon}</span>
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
-        <div style={{
-          position: 'absolute',
-          bottom: '24px',
-          left: '16px',
-          right: '16px',
-          paddingTop: '16px',
-          borderTop: '1px solid var(--border)'
-        }}>
-          <button 
+
+        {/* Bottom section */}
+        <div className="sidebar-bottom">
+          {role === 'host' && (
+            <button
+              className="sidebar-link sidebar-create"
+              onClick={() => {
+                navigate('/host/create-event');
+                closeMobileMenu();
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v8M8 12h8" />
+              </svg>
+              Create New Event
+            </button>
+          )}
+
+          <div
+            className="sidebar-user-bottom"
             onClick={() => {
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              window.location.href = '/login';
+              navigate('/profile');
+              closeMobileMenu();
             }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              textAlign: 'left',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '8px',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
+            style={{ cursor: 'pointer' }}
           >
-            🚪 Logout
-          </button>
+            <img src="/profile.png" alt="User avatar" className="sidebar-avatar-img" />
+            <div>
+              <div className="sidebar-user-name2">{user.name}</div>
+              <div className="sidebar-user-plan2">{user.plan}</div>
+            </div>
+          </div>
         </div>
       </aside>
-      {isMobile && menuOpen && (
-        <div 
-          onClick={() => setMenuOpen(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 999,
-          }}
-        />
-      )}
     </>
   );
 }
 
-function NavItem({ icon, label, href }) {
+// ── Icon components ────────────────────────────────────────────────
+
+function GridIcon() {
   return (
-    <li style={{ marginBottom: '2px' }}>
-      <a 
-        href={href}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          color: 'var(--text-muted)',
-          textDecoration: 'none',
-          fontSize: '14px',
-          fontWeight: '500',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'var(--light-bg)';
-          e.currentTarget.style.color = 'var(--primary)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.color = 'var(--text-muted)';
-        }}
-      >
-        <span style={{ fontSize: '18px', width: '24px' }}>{icon}</span>
-        {label}
-      </a>
-    </li>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </svg>
   );
-      }
+}
+
+function CalIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function GalleryIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
+  );
+}
+
+function TimelineIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
+function QRIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </svg>
+  );
+}

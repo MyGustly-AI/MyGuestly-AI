@@ -1,129 +1,8 @@
-<<<<<<< HEAD
-// src/pages/ProfilePage.jsx
-import React, { useState } from 'react';
-import { Sidebar } from '../components/Sidebar';
-import { useAuth } from '../context/AuthContext';
-import './ProfilePage.css';
-
-export default function ProfilePage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('about');
-
-  // Sample profile data
-  const profileData = {
-    name: "Ajala Peace",
-    title: "PREMIUM HOST",
-    memberSince: "OCT 2021",
-    location: "LAGOS, NIGERIA",
-    coverImage: "https://via.placeholder.com/1200x300/4B0082/ffffff?text=Cover+Image",
-    avatar: "https://via.placeholder.com/120/4B0082/ffffff?text=AP",
-    eventsHosted: 42,
-    memoriesCaptured: "1.2k",
-    rsvpRate: "98%",
-    bio: "With over a decade of experience in the luxury hospitality sector across Lagos State, I specialize in curating high-stakes social events where every detail is a performance. My passion lies in the intersection of traditional Nigerian warmth and contemporary global prestige. From intimate ministerial dinners to expansive royal weddings, my goal is always to create a digital and physical environment where guests feel like the center of a celebration.",
-    highlights: [
-      { title: "Pink floral tablecape", image: "🌸" },
-      { title: "Purple lit stage", image: "🎭" },
-      { title: "Elegant canapés", image: "🍽️" }
-    ]
-  };
-
-  return (
-    <div className="app-layout">
-      <Sidebar />
-      <div className="main-content">
-        <div className="page-inner">
-          <div className="profile-container">
-            {/* Cover Image */}
-            <div className="cover-section">
-              <img 
-                src={profileData.coverImage} 
-                alt="Cover" 
-                className="cover-image"
-              />
-              <div className="cover-overlay">
-                <button className="btn-ghost" style={{ color: 'white', borderColor: 'white' }}>
-                  Edit Cover
-                </button>
-              </div>
-            </div>
-
-            {/* Profile Info */}
-            <div className="profile-info-section">
-              <div className="profile-avatar-wrapper">
-                <img 
-                  src={profileData.avatar} 
-                  alt={profileData.name} 
-                  className="profile-avatar"
-                />
-                <span className="profile-status">🟢 Active</span>
-              </div>
-
-              <div className="profile-details">
-                <div className="profile-name-row">
-                  <h1 className="profile-name">{profileData.name}</h1>
-                  <span className="profile-badge">{profileData.title}</span>
-                </div>
-                <p className="profile-meta">
-                  MEMBER SINCE {profileData.memberSince} • {profileData.location}
-                </p>
-                <div className="profile-actions">
-                  <button className="btn-primary">Message Host</button>
-                  <button className="btn-outline">Share Profile</button>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="profile-stats">
-                <div className="stat-item">
-                  <span className="stat-number">{profileData.eventsHosted}</span>
-                  <span className="stat-label">Events Hosted</span>
-                </div>
-                <div className="stat-divider"></div>
-                <div className="stat-item">
-                  <span className="stat-number">{profileData.memoriesCaptured}</span>
-                  <span className="stat-label">Memories Captured</span>
-                </div>
-                <div className="stat-divider"></div>
-                <div className="stat-item">
-                  <span className="stat-number">{profileData.rsvpRate}</span>
-                  <span className="stat-label">RSVP Rate</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bio Section */}
-            <div className="bio-section">
-              <div className="bio-header">
-                <h2 className="bio-title">Crafting Unforgettable Events</h2>
-                <span className="bio-rating">⭐ 99</span>
-              </div>
-              <p className="bio-text">{profileData.bio}</p>
-            </div>
-
-            {/* Recent Highlights */}
-            <div className="highlights-section">
-              <div className="section-header">
-                <h2>Recent Highlights</h2>
-                <button className="btn-ghost">VIEW ALL →</button>
-              </div>
-              <div className="highlights-grid">
-                {profileData.highlights.map((item, index) => (
-                  <div key={index} className="highlight-card">
-                    <div className="highlight-icon">{item.image}</div>
-                    <span className="highlight-title">{item.title}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-=======
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMeRequest, updateProfileRequest, uploadAvatarRequest, uploadCoverRequest } from '../api/auth';
 import './ProfilePage.css';
-
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -133,7 +12,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Edit modal state
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ 
     fullName: '', 
@@ -144,17 +22,14 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
-  // Avatar upload
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const avatarInputRef = useRef(null);
 
-  // Cover upload
   const [coverPreview, setCoverPreview] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
   const coverInputRef = useRef(null);
 
-  // ── Load profile on mount ──────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
@@ -175,7 +50,6 @@ export default function ProfilePage() {
     })();
   }, []);
 
-  // ── Avatar change ──────────────────────────────────────────────
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -191,7 +65,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ── Cover change ─────────────────────────────────────────────────
   const handleCoverChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -207,7 +80,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ── Save edits ─────────────────────────────────────────────────
   const handleSave = async () => {
     setSaveError(null);
     setSaving(true);
@@ -229,7 +101,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ── Derived display values ────────────────────────────────────
   const displayName = profile?.fullName || authUser?.fullName || 'User';
   const displayRole = profile?.role
     ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1).toLowerCase()
@@ -244,7 +115,6 @@ export default function ProfilePage() {
     ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
     : '';
 
-  // ── Render ────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="profile-page" style={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -267,7 +137,6 @@ export default function ProfilePage() {
   return (
     <div className="profile-page">
 
-      {/* ── Top Navigation Bar ──────────────────────────────────── */}
       <header className="profile-topbar">
         <span className="profile-logo">
           My<span className="profile-logo-purple">Guestly</span>{' '}
@@ -289,7 +158,6 @@ export default function ProfilePage() {
 
       <div className="profile-body">
 
-        {/* ── Cover + Avatar + Info + Actions ────────────────────── */}
         <div className="profile-cover-card">
           <div className="profile-cover-img-wrap" style={{ cursor: 'pointer' }} onClick={() => coverInputRef.current.click()}>
             <img src={coverSrc} alt="Cover" className="profile-cover-img" />
@@ -305,7 +173,6 @@ export default function ProfilePage() {
           </div>
           <div className="profile-cover-bottom">
             
-            {/* Clickable avatar with camera icon */}
             <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => avatarInputRef.current.click()}>
               <img src={avatarSrc} alt={displayName} className="profile-main-avatar" />
               <div style={{
@@ -319,7 +186,6 @@ export default function ProfilePage() {
               <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
             </div>
 
-            {/* Name, badges, and action buttons */}
             <div style={{ flex: 1 }}>
               <h1 className="profile-name-lg">
                 {displayName}
@@ -343,7 +209,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ── Stats Bar ───────────────────────────────────────────── */}
         <div className="profile-stats-card">
           <div className="profile-stat">
             <span className="profile-stat-val">{profile?.eventsHosted ?? 0}</span>
@@ -365,13 +230,10 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ── Main Content Row (Left: Bio + Highlights | Right: Contact + Map) ── */}
         <div className="profile-content-row">
 
-          {/* ── LEFT COLUMN ─────────────────────────────────────── */}
           <div className="profile-left">
             
-            {/* Bio Section */}
             <div className="profile-card">
               <div className="profile-bio-section">
                 <div className="profile-quote-wrap">
@@ -389,7 +251,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Recent Highlights */}
             <div className="profile-card">
               <div className="profile-highlights-header">
                 <h3 className="profile-bio-title">Recent Highlights</h3>
@@ -411,10 +272,8 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN ────────────────────────────────────── */}
           <div className="profile-right">
             
-            {/* Host Contact Info */}
             <div className="profile-card">
               <span className="profile-contact-label">HOST CONTACT</span>
               
@@ -442,7 +301,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Social Icons */}
               <div className="profile-social-row">
                 <button className="profile-social-btn" title="Website"><GlobeIcon /></button>
                 <button className="profile-social-btn" title="Instagram"><CameraIcon size={16} color="var(--primary,#7c3aed)" /></button>
@@ -450,7 +308,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Location Map */}
             <div className="profile-map-card">
               <div className="profile-map-placeholder">
                 <div className="profile-map-pin-label">
@@ -459,11 +316,9 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
->>>>>>> in
         </div>
       </div>
 
-      {/* ── Edit Profile Modal ───────────────────────────────────── */}
       {editing && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
@@ -555,10 +410,6 @@ export default function ProfilePage() {
     </div>
   );
 }
-<<<<<<< HEAD
-=======
-
-// ── Icon Components ────────────────────────────────────────────────
 
 function BellIcon() {
   return (
@@ -631,4 +482,3 @@ function AtIcon() {
     </svg>
   );
 }
->>>>>>> in
