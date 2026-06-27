@@ -376,12 +376,6 @@ enum InvitationStatus {
   CHECKED_IN
 }
 
-enum MediaType {
-  IMAGE
-  VIDEO
-  AUDIO
-}
-
 enum MemoryType {
   TEXT
   VOICE
