@@ -1,0 +1,1313 @@
+{
+  "info": {
+    "name": "MyGuestly AI — Full API (Production)",
+    "description": "Complete API collection for MyGuestly AI backend. Sprints 1–3. pointed directly to the production Render server environment. Import this file into Postman, set your environment variables, and start testing immediately.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "https://myguestly-ai.onrender.com/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "ACCESS_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "EVENT_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "GUEST_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "INVITATION_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "MEDIA_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "MEMORY_ID",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.accessToken) {",
+                  "  pm.collectionVariables.set('ACCESS_TOKEN', res.data.accessToken);",
+                  "  console.log(' ACCESS_TOKEN set');",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has accessToken', () => pm.expect(res.data.accessToken).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Ada Lovelace\",\n  \"email\": \"ada@example.com\",\n  \"password\": \"StrongPass123\",\n  \"phone\": \"+2348012345678\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/auth/register",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.accessToken) {",
+                  "  pm.collectionVariables.set('ACCESS_TOKEN', res.data.accessToken);",
+                  "  console.log(' ACCESS_TOKEN set from login');",
+                  "}",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has accessToken', () => pm.expect(res.data.accessToken).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ada@example.com\",\n  \"password\": \"StrongPass123\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/auth/login",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/auth/refresh",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has user data', () => pm.expect(pm.response.json().data).to.have.property('email'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/auth/me",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Ada Byron\",\n  \"phone\": \"+2348098765432\",\n  \"avatarUrl\": \"https://example.com/avatar.png\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/auth/profile",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"StrongPass123\",\n  \"newPassword\": \"NewStrongPass456\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/auth/password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "password"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/auth/verify-email?token=PASTE_TOKEN_FROM_EMAIL_HERE",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "PASTE_TOKEN_FROM_EMAIL_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ada@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/auth/forgot-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"PASTE_TOKEN_FROM_EMAIL_HERE\",\n  \"newPassword\": \"NewStrongPass456\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/auth/reset-password",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/auth/logout",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/auth/account",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "account"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('EVENT_ID', res.data.id);",
+                  "  console.log(' EVENT_ID set:', res.data.id);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Event has eventCode', () => pm.expect(res.data.eventCode).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Grand Gala 2026\",\n  \"description\": \"An evening of elegance and celebration\",\n  \"eventCategory\": \"Gala\",\n  \"venueName\": \"The Landmark Centre\",\n  \"address\": \"Plot 2, Adeola Odeku Street, Victoria Island, Lagos\",\n  \"location\": \"Lagos\",\n  \"coverUrl\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n  \"themeAccent\": \"#6B5BFF\",\n  \"rsvpDeadline\": \"2026-07-01T00:00:00.000Z\",\n  \"startDate\": \"2026-07-10T18:00:00.000Z\",\n  \"endDate\": \"2026-07-10T23:00:00.000Z\",\n  \"maxGuests\": 500\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List My Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events?page=1&limit=10",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "DRAFT",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Grand Gala 2026 — Updated\",\n  \"maxGuests\": 600,\n  \"location\": \"Abuja\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Publish Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/publish",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "publish"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/start",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "start"
+              ]
+            }
+          }
+        },
+        {
+          "name": "End Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/end",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "end"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event Capacity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/capacity",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "capacity"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/dashboard",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "dashboard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Guests & Invitations",
+      "item": [
+        {
+          "name": "Invite Single Guest",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.guest && res.data.guest.id) {",
+                  "  pm.collectionVariables.set('GUEST_ID', res.data.guest.id);",
+                  "  console.log(' GUEST_ID set:', res.data.guest.id);",
+                  "}",
+                  "if (res.data && res.data.invitation && res.data.invitation.token) {",
+                  "  pm.collectionVariables.set('INVITATION_TOKEN', res.data.invitation.token);",
+                  "  console.log(' INVITATION_TOKEN set:', res.data.invitation.token);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has invitation token', () => pm.expect(res.data.invitation.token).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grace Hopper\",\n  \"email\": \"grace@example.com\",\n  \"phone\": \"08012345678\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "guests"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bulk Invite Guests",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guests\": [\n    { \"name\": \"Katherine Johnson\", \"email\": \"katherine@example.com\" },\n    { \"name\": \"Dorothy Vaughan\", \"phone\": \"09087654321\" },\n    { \"name\": \"Mary Jackson\", \"email\": \"mary@example.com\", \"phone\": \"08011223344\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests/bulk-invite",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "guests",
+                "bulk-invite"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Guests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests?page=1&limit=10",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "guests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "rsvpStatus",
+                  "value": "CONFIRMED",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Guest RSVP",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/guests/{{GUEST_ID}}/rsvp",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "guests",
+                "{{GUEST_ID}}",
+                "rsvp"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔳 QR Gate Verification",
+      "item": [
+        {
+          "name": "Verify QR at Gate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Check-in successful or already used', () => {",
+                  "  pm.expect([200, 400]).to.include(pm.response.code);",
+                  "});",
+                  "console.log('QR verification result:', res.message);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"totp\": \"482917\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/verify-gate/{{INVITATION_TOKEN}}",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "verify-gate",
+                "{{INVITATION_TOKEN}}"
+              ]
+            },
+            "description": "Replace the totp value with the current 6-digit code generated from the guest's invitation token. The code rotates every 30 seconds."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🖼️ Media Gallery",
+      "item": [
+        {
+          "name": "Get Upload Signature",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has signature', () => pm.expect(res.data.signature).to.be.a('string'));",
+                  "console.log('Upload URL:', res.data.uploadUrl);",
+                  "console.log('Folder:', res.data.folder);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/upload-url",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media",
+                "upload-url"
+              ]
+            },
+            "description": "Step 1 of media upload. Use the returned signature, timestamp, apiKey, folder and uploadUrl to POST a file directly to Cloudinary from the frontend. Then call 'Register Uploaded Media' with the resulting URL and publicId."
+          }
+        },
+        {
+          "name": "Register Uploaded Media",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('MEDIA_ID', res.data.id);",
+                  "  console.log(' MEDIA_ID set:', res.data.id);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaType\": \"IMAGE\",\n  \"url\": \"https://res.cloudinary.com/your-cloud/image/upload/v1234567890/myguestly-ai/events/uuid/photo.jpg\",\n  \"publicId\": \"myguestly-ai/events/uuid/photo\",\n  \"caption\": \"Such a lovely moment!\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media"
+              ]
+            },
+            "description": "Step 2 of media upload. After uploading to Cloudinary directly, register the URL and publicId here. A background job is automatically queued to generate compressed variants and extract metadata."
+          }
+        },
+        {
+          "name": "Get Media Gallery",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media?page=1&limit=10",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "mediaType",
+                  "value": "IMAGE",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Voice Note to Media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"voiceNoteUrl\": \"https://res.cloudinary.com/your-cloud/video/upload/v1234567890/myguestly-ai/voice_note.mp3\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/{{MEDIA_ID}}/voice-note",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media",
+                "{{MEDIA_ID}}",
+                "voice-note"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"What a beautiful shot! 😍\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/{{MEDIA_ID}}/comments",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media",
+                "{{MEDIA_ID}}",
+                "comments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Toggle Like",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "console.log('Like status:', res.data.liked ? '❤️ Liked' : '🤍 Unliked');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/media/{{MEDIA_ID}}/likes",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "media",
+                "{{MEDIA_ID}}",
+                "likes"
+              ]
+            },
+            "description": "Calling this toggles the like. First call = liked, second call = unliked."
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 Memories",
+      "item": [
+        {
+          "name": "Create Text Memory",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('MEMORY_ID', res.data.id);",
+                  "  console.log(' MEMORY_ID set:', res.data.id);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This was the most beautiful wedding I've ever attended. Thank you for having me!\",\n  \"type\": \"TEXT\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/memories",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "memories"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Voice Memory",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Voice memory from Grace\",\n  \"type\": \"VOICE\",\n  \"mediaUrl\": \"https://res.cloudinary.com/your-cloud/video/upload/v1234567890/myguestly-ai/voice_memory.mp3\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/memories",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "memories"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Memory Feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/events/{{EVENT_ID}}/memories?page=1&limit=10",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "events",
+                "{{EVENT_ID}}",
+                "memories"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "type",
+                  "value": "TEXT",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API is up', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/health",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Integration",
+      "item": [
+        {
+          "name": "Organize Media Moments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaItems\": [\n    \"A photo of the bride and groom at the altar\",\n    \"People dancing energetically under neon lights\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/ai/organize",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "ai",
+                "organize"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get AI Event Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/ai/events/{{EVENT_ID}}/timeline",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "ai",
+                "events",
+                "{{EVENT_ID}}",
+                "timeline"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retag Event Media",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ACCESS_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/ai/events/{{EVENT_ID}}/retag",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "ai",
+                "events",
+                "{{EVENT_ID}}",
+                "retag"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
